@@ -15,6 +15,7 @@ var (
 // ConfigureDocker will setup a docker client used during normal operations
 func ConfigureDocker() {
 	log.Info("Connecting to Docker Daemon")
+
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		log.Fatalf("Could not create docker client: %s", err.Error())
@@ -24,6 +25,7 @@ func ConfigureDocker() {
 	if err != nil {
 		log.Fatalf("Could not get docker info: %s", err.Error())
 	}
+
 	log.Infof("Connected to docker daemon: %s @ %s", info.Name, info.ServerVersion)
 	dockerClient = client
 }
@@ -42,7 +44,7 @@ func findDockerContainer(ip string) (*docker.Container, error) {
 	for _, container := range containers {
 		for name, network := range container.Networks.Networks {
 			if network.IPAddress == ip {
-				log.Infof("found container ip %s in %+v in network %s", ip, container.Names, name)
+				log.Debugf("found container ip %s in %+v in network %s", ip, container.Names, name)
 				return dockerClient.InspectContainer(container.ID)
 			}
 		}
@@ -61,5 +63,5 @@ func findDockerContainerIAMRole(container *docker.Container) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Could not find IAM_ROLE in containers ENV config")
+	return "", fmt.Errorf("Could not find IAM_ROLE in the container ENV config")
 }

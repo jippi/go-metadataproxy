@@ -24,8 +24,6 @@
 #   go-tests = true
 #   unused-packages = true
 
-required=["github.com/davecgh/go-spew"]
-
 [prune]
   go-tests = true
   unused-packages = true
@@ -46,6 +44,6 @@ required=["github.com/davecgh/go-spew"]
   name = "github.com/aws/aws-sdk-go-v2"
   version = "2.0.0-preview.2"
 
-[[constraint]]
+[[override]]
   name = "github.com/davecgh/go-spew"
   version = "1.1.0"
