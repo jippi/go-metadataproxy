@@ -13,8 +13,8 @@ var (
 	stsService *sts.STS
 )
 
+// ConfigureAWS will setup the iam and sts services needed during normal operations
 func ConfigureAWS() {
-	// Configure AWS
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		log.Fatalf("unable to load AWS SDK config, " + err.Error())

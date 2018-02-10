@@ -12,10 +12,11 @@ var (
 	dockerClient *docker.Client
 )
 
+// ConfigureDocker
 func ConfigureDocker() {
 	// Configure docker
 	log.Info("Connecting to Docker Daemon")
-	client, err := docker.NewClient("unix:///var/run/docker.sock")
+	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		log.Fatalf("Could not create docker client: %s", err.Error())
 	}
