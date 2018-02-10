@@ -15,9 +15,10 @@ var (
 
 // ConfigureAWS will setup the iam and sts services needed during normal operations
 func ConfigureAWS() {
+	log.Info("Creating AWS client")
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		log.Fatalf("unable to load AWS SDK config, " + err.Error())
+		log.Fatalf("Unable to load AWS SDK config, " + err.Error())
 	}
 
 	iamService = iam.New(cfg)
