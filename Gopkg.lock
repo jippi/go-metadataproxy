@@ -55,6 +55,12 @@
   revision = "1a794c0014a7b786879312d1dab309ba96ead8bc"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -195,6 +201,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fbaec6d56c489b5194040cc93d1ec3bb29130e2523330cb833af5d07e966e844"
+  inputs-digest = "8661b2d24c51d72fe57f13a9ae3ebceade6ad4189c5f6a2002bccddcca75b000"
   solver-name = "gps-cdcl"
   solver-version = 1

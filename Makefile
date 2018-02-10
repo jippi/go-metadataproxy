@@ -70,3 +70,10 @@ dist-clean: clean
 test:
 	@echo "==> Running $@..."
 	@go test -v -tags $(shell go list ./... | grep -v vendor)
+
+.PHONY: build-linux
+build-linux:
+	GOOS=linux GOARCH=amd64 go build -o build/go-metadaproxy-linux-amd64
+	ssh 10.30.68.202 "sudo killall -9 go-metadaproxy-linux-amd64 || exit 0"
+	scp build/go-metadaproxy-linux-amd64 10.30.68.202:/tmp
+	ssh 10.30.68.202 "sudo /tmp/go-metadaproxy-linux-amd64"

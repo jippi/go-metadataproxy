@@ -24,6 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
+required=["github.com/davecgh/go-spew"]
 
 [prune]
   go-tests = true

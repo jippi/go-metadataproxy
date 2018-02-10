@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"encoding/json"
@@ -11,13 +11,13 @@ import (
 
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
-func iamRoleInfoHandler(w http.ResponseWriter, r *http.Request) {
+func IamRoleInfoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
 
 	// ensure we got compatible api version
 	if !isCompatibleApiVersion(r) {
 		log.Info("Request is using too old version of meta-data API, passing through directly")
-		passthroughHandler(w, r)
+		PassthroughHandler(w, r)
 		return
 	}
 
@@ -52,13 +52,13 @@ func iamRoleInfoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // handles: {api_version}/meta-data/iam/security-credentials/
-func iamRoleNameHandler(w http.ResponseWriter, r *http.Request) {
+func IamRoleNameHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
 
 	// ensure we got compatible api version
 	if !isCompatibleApiVersion(r) {
 		log.Info("Request is using too old version of meta-data API, passing through directly")
-		passthroughHandler(w, r)
+		PassthroughHandler(w, r)
 		return
 	}
 
@@ -77,13 +77,13 @@ func iamRoleNameHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
-func iamStsCredentialsHandler(w http.ResponseWriter, r *http.Request) {
+func IamStsCredentialsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
 
 	// ensure we got compatible api version
 	if !isCompatibleApiVersion(r) {
 		log.Info("Request is using too old version of meta-data API, passing through directly")
-		passthroughHandler(w, r)
+		PassthroughHandler(w, r)
 		return
 	}
 
@@ -129,7 +129,7 @@ func iamStsCredentialsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // handles: /*
-func passthroughHandler(w http.ResponseWriter, r *http.Request) {
+func PassthroughHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
 
 	r.RequestURI = ""

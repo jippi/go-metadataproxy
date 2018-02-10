@@ -1,7 +1,8 @@
-package main
+package internal
 
 import (
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	log "github.com/sirupsen/logrus"
@@ -11,6 +12,16 @@ var (
 	iamService *iam.IAM
 	stsService *sts.STS
 )
+
+func ConfigureAWS() {
+	// Configure AWS
+	cfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		log.Fatalf("unable to load AWS SDK config, " + err.Error())
+	}
+	iamService = iam.New(cfg)
+	stsService = sts.New(cfg)
+}
 
 func readRoleFromAWS(role string) (*iam.GetRoleOutput, error) {
 	log.Infof("Requesting IAM role info for %s", role)

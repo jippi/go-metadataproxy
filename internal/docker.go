@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -11,6 +11,22 @@ import (
 var (
 	dockerClient *docker.Client
 )
+
+func ConfigureDocker() {
+	// Configure docker
+	log.Info("Connecting to Docker Daemon")
+	client, err := docker.NewClient("unix:///var/run/docker.sock")
+	if err != nil {
+		log.Fatalf("Could not create docker client: %s", err.Error())
+	}
+
+	info, err := client.Info()
+	if err != nil {
+		log.Fatalf("Could not get docker info: %s", err.Error())
+	}
+	log.Infof("Connected to docker daemon: %s @ %s", info.Name, info.ServerVersion)
+	dockerClient = client
+}
 
 func findDockerContainer(ip string) (*docker.Container, error) {
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
