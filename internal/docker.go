@@ -51,7 +51,7 @@ func findDockerContainer(ip string) (*docker.Container, error) {
 	return nil, fmt.Errorf("Could not find any container with IP %s", ip)
 }
 
-func findDockerContainerIamRole(container *docker.Container) (string, error) {
+func findDockerContainerIAMRole(container *docker.Container) (string, error) {
 	for _, envPair := range container.Config.Env {
 		chunks := strings.SplitN(envPair, "=", 2)
 		log.Debugf("k=%s v=%s", chunks[0], chunks[1])
