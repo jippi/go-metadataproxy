@@ -23,7 +23,7 @@ $(BINARIES): $(BUILD_DIR)/go-metadaproxy-%: $(BUILD_DIR)
 .PHONY: install
 install:
 	@echo "=> dep ensure..."
-	dep ensure
+	@dep ensure
 
 .PHONY: fmt
 fmt:
@@ -70,7 +70,3 @@ dist-clean: clean
 test:
 	@echo "==> Running $@..."
 	@go test -v -tags $(shell go list ./... | grep -v vendor)
-
-.PHONY: build-linux
-build-linux:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 make build
