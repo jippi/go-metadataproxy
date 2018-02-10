@@ -12,9 +12,8 @@ var (
 	dockerClient *docker.Client
 )
 
-// ConfigureDocker
+// ConfigureDocker will setup a docker client used during normal operations
 func ConfigureDocker() {
-	// Configure docker
 	log.Info("Connecting to Docker Daemon")
 	client, err := docker.NewClientFromEnv()
 	if err != nil {

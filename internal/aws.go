@@ -19,6 +19,7 @@ func ConfigureAWS() {
 	if err != nil {
 		log.Fatalf("unable to load AWS SDK config, " + err.Error())
 	}
+
 	iamService = iam.New(cfg)
 	stsService = sts.New(cfg)
 }
