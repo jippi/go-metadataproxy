@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -81,10 +80,7 @@ func roleInfoHandler(w http.ResponseWriter, r *http.Request) {
 		"InstanceProfileId":  *assumeRole.AssumedRoleUser.AssumedRoleId,
 	}
 
-	// send response
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	sendJSONResponse(w, response)
 }
 
 // handles: {api_version}/meta-data/iam/security-credentials/
@@ -156,9 +152,7 @@ func credentialsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send response
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	sendJSONResponse(w, response)
 }
 
 // handles: /*
@@ -185,7 +179,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	w.Header().Add("X-Proxy-By", "go-metadataproxy")
+	w.Header().Add("X-Powered-By", "go-metadataproxy")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }

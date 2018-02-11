@@ -55,6 +55,12 @@
   revision = "1a794c0014a7b786879312d1dab309ba96ead8bc"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -157,6 +163,12 @@
   version = "v0.1.1"
 
 [[projects]]
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -195,6 +207,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8b0a44fcff67514696d8caab72713479fd347c215623a3a0e73d654dbcd23671"
+  inputs-digest = "233f81287e30e89f3a2448b7f5645bf33a5bfc778a77c5ad75d039134bd002cf"
   solver-name = "gps-cdcl"
   solver-version = 1

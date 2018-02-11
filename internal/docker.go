@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
@@ -56,11 +57,15 @@ func findDockerContainer(ip string) (*docker.Container, error) {
 func findDockerContainerIAMRole(container *docker.Container) (string, error) {
 	for _, envPair := range container.Config.Env {
 		chunks := strings.SplitN(envPair, "=", 2)
-		log.Debugf("k=%s v=%s", chunks[0], chunks[1])
 
 		if chunks[0] == "IAM_ROLE" {
 			return chunks[1], nil
 		}
+	}
+
+	if defaultRole := os.Getenv("DEFAULT_ROLE"); defaultRole != "" {
+		log.Infof("Could not find IAM_ROLE in the container, returning DEFAULT_ROLE %s", defaultRole)
+		return defaultRole, nil
 	}
 
 	return "", fmt.Errorf("Could not find IAM_ROLE in the container ENV config")

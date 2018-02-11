@@ -24,6 +24,8 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = ["github.com/davecgh/go-spew/spew"]
+
 [prune]
   go-tests = true
   unused-packages = true
@@ -47,3 +49,11 @@
 [[override]]
   name = "github.com/davecgh/go-spew"
   version = "1.1.0"
+
+[[constraint]]
+  name = "github.com/coocood/freecache"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/patrickmn/go-cache"
+  version = "2.1.0"

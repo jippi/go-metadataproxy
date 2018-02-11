@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -42,4 +43,14 @@ func isCompatibleAPIVersion(r *http.Request) bool {
 func httpError(err error, w http.ResponseWriter, r *http.Request) {
 	log.Error(err)
 	http.NotFound(w, r)
+}
+
+func sendJSONResponse(w http.ResponseWriter, response interface{}) {
+	w.Header().Add("X-Powered-By", "go-metadataproxy")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	encoder.Encode(response)
 }
