@@ -75,7 +75,7 @@ func roleInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// build response
 	response := map[string]string{
 		"Code":               "Success",
-		"LastUpdated":        "now?", // TODO
+		"LastUpdated":        assumeRole.Credentials.Expiration.Add(-1 * time.Hour).Format(awsTimeLayoutResponse),
 		"InstanceProfileArn": *assumeRole.AssumedRoleUser.Arn,
 		"InstanceProfileId":  *assumeRole.AssumedRoleUser.AssumedRoleId,
 	}
@@ -143,12 +143,12 @@ func credentialsHandler(w http.ResponseWriter, r *http.Request) {
 	// build response
 	response := map[string]string{
 		"Code":            "Success",
-		"LastUpdated":     "now?", // TODO
+		"LastUpdated":     assumeRole.Credentials.Expiration.Add(-1 * time.Hour).Format(awsTimeLayoutResponse),
 		"Type":            "AWS-HMAC",
 		"AccessKeyId":     *assumeRole.Credentials.AccessKeyId,
 		"SecretAccessKey": *assumeRole.Credentials.SecretAccessKey,
 		"Token":           *assumeRole.Credentials.SessionToken,
-		"Expiration":      "now??", // TODO
+		"Expiration":      assumeRole.Credentials.Expiration.Format(awsTimeLayoutResponse),
 	}
 
 	// send response
