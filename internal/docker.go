@@ -15,19 +15,19 @@ var (
 
 // ConfigureDocker will setup a docker client used during normal operations
 func ConfigureDocker() {
-	log.Info("Connecting to Docker Daemon")
+	log.Info("Connecting to Docker daemon")
 
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
-		log.Fatalf("Could not create docker client: %s", err.Error())
+		log.Fatalf("Could not create Docker client: %s", err.Error())
 	}
 
 	info, err := client.Info()
 	if err != nil {
-		log.Fatalf("Could not get docker info: %s", err.Error())
+		log.Fatalf("Could not get Docker info: %s", err.Error())
 	}
 
-	log.Infof("Connected to docker daemon: %s @ %s", info.Name, info.ServerVersion)
+	log.Infof("Connected to Docker daemon: %s @ %s", info.Name, info.ServerVersion)
 	dockerClient = client
 }
 
@@ -45,7 +45,7 @@ func findDockerContainer(ip string) (*docker.Container, error) {
 	for _, container := range containers {
 		for name, network := range container.Networks.Networks {
 			if network.IPAddress == ip {
-				log.Debugf("found container ip %s in %+v in network %s", ip, container.Names, name)
+				log.Info("Found container IP %s in %+v wihthin network %s", ip, container.Names, name)
 				return dockerClient.InspectContainer(container.ID)
 			}
 		}

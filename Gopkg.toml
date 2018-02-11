@@ -57,3 +57,7 @@ required = ["github.com/davecgh/go-spew/spew"]
 [[constraint]]
   name = "github.com/patrickmn/go-cache"
   version = "2.1.0"
+
+[[constraint]]
+  name = "github.com/newrelic/go-agent"
+  version = "1.11.0"

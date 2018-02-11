@@ -76,7 +76,7 @@ func assumeRoleFromAWS(arn string) (*sts.AssumeRoleOutput, error) {
 		return nil, err
 	}
 
-	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - 10*time.Minute
+	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - 1*time.Minute
 
 	log.Infof("Will cache STS Assumed Role info for %s in %s", arn, ttl.String())
 

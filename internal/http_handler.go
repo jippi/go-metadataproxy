@@ -8,17 +8,38 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/newrelic/go-agent"
 	log "github.com/sirupsen/logrus"
 )
 
 // StarServer will start the HTTP server (blocking)
 func StarServer() {
 	r := mux.NewRouter()
-	r.HandleFunc("/{api_version}/meta-data/iam/info", roleInfoHandler)
-	r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", roleInfoHandler)
-	r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", roleNameHandler)
-	r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", credentialsHandler)
-	r.PathPrefix("/").HandlerFunc(passthroughHandler)
+
+	newrelicAppName := os.Getenv("NEWRELIC_APP_NAME")
+	newrelicLicense := os.Getenv("NEWRELIC_LICENSE")
+
+	if newrelicAppName != "" && newrelicLicense != "" {
+		config := newrelic.NewConfig(newrelicAppName, newrelicLicense)
+		app, err := newrelic.NewApplication(config)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info", roleInfoHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info/{junk}", roleInfoHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/", roleNameHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/{requested_role}", credentialsHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{rest:.*}", passthroughHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/", passthroughHandler))
+	} else {
+		r.HandleFunc("/{api_version}/meta-data/iam/info", roleInfoHandler)
+		r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", roleInfoHandler)
+		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", roleNameHandler)
+		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", credentialsHandler)
+		r.HandleFunc("/{rest:.*}", passthroughHandler)
+		r.HandleFunc("/", passthroughHandler)
+	}
 
 	host := os.Getenv("HOST")
 	if host == "" {

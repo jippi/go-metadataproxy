@@ -139,6 +139,20 @@
   revision = "0b12d6b5"
 
 [[projects]]
+  name = "github.com/newrelic/go-agent"
+  packages = [
+    ".",
+    "internal",
+    "internal/cat",
+    "internal/jsonx",
+    "internal/logger",
+    "internal/sysinfo",
+    "internal/utilization"
+  ]
+  revision = "f5bce3387232559bcbe6a5f8227c4bf508dac1ba"
+  version = "v1.11.0"
+
+[[projects]]
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
   revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
@@ -207,6 +221,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "233f81287e30e89f3a2448b7f5645bf33a5bfc778a77c5ad75d039134bd002cf"
+  inputs-digest = "0c6232d4026a38779ba9a8f75dc3211a8216792866ff64a365849e5b8bdbc1ea"
   solver-name = "gps-cdcl"
   solver-version = 1

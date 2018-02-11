@@ -49,10 +49,12 @@ script, or set via docker environment variables.
 
 | Variable | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| **DEFAULT\_ROLE** | String | | Role to use if IAM\_ROLE is not set in a container's environment. If unset the container will get no IAM credentials. |
-| **DEFAULT\_ACCOUNT\_ID** | String | | The default account ID to assume roles in, if IAM\_ROLE does not contain account information. If unset, go-metadataproxy will attempt to lookup role ARNs using iam:GetRole. |
-| DEBUG | Boolean | False | Enable debug mode. You should not do this in production as it will leak IAM credentials into your logs |
-| DOCKER\_URL | String | unix://var/run/docker.sock | Url of the docker daemon. The default is to access docker via its socket. |
+| `DEFAULT_ROLE` | String | | Role to use if IAM\_ROLE is not set in a container's environment. If unset the container will get no IAM credentials. |
+| `DEFAULT_ACCOUNT_ID` | String | | The default account ID to assume roles in, if IAM\_ROLE does not contain account information. If unset, go-metadataproxy will attempt to lookup role ARNs using iam:GetRole. |
+| `DEBUG` | Boolean | False | Enable debug mode. You should not do this in production as it will leak IAM credentials into your logs |
+| `DOCKER_URL` | String | unix://var/run/docker.sock | Url of the docker daemon. The default is to access docker via its socket. |
+| `NEWRELIC_APP_NAME` | String | (Optional) NewRelic application name. |
+| `NEWRELIC_LICENSE` | String | (Optional) NewRelic license key. |
 
 #### Default Roles
 
