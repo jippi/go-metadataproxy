@@ -34,12 +34,12 @@ func ConfigureAWS() {
 	stsService = sts.New(cfg)
 }
 
-func readRoleFromAWS(role string) (*iam.GetRoleOutput, error) {
+func readRoleFromAWS(role string) (*iam.Role, error) {
 	log.Infof("Looking for IAM role for %s", role)
 
 	if roleObject, ok := roleCache.Get(role); ok {
 		log.Infof("Found IAM role %s in cache", role)
-		return roleObject.(*iam.GetRoleOutput), nil
+		return roleObject.(*iam.Role), nil
 	}
 
 	log.Infof("Requesting IAM role info for %s from AWS", role)
@@ -47,14 +47,14 @@ func readRoleFromAWS(role string) (*iam.GetRoleOutput, error) {
 		RoleName: aws.String(role),
 	})
 
-	roleObject, err := req.Send()
+	resp, err := req.Send()
 	if err != nil {
 		return nil, err
 	}
 
-	roleCache.Set(role, roleObject, 6*time.Hour)
+	roleCache.Set(role, resp.Role, 6*time.Hour)
 
-	return roleObject, nil
+	return resp.Role, nil
 }
 
 func assumeRoleFromAWS(arn string) (*sts.AssumeRoleOutput, error) {

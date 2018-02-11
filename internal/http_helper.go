@@ -14,7 +14,7 @@ func remoteIP(addr string) string {
 	return strings.Split(addr, ":")[0]
 }
 
-func findContainerRoleByAddress(addr string) (*iam.GetRoleOutput, error) {
+func findContainerRoleByAddress(addr string) (*iam.Role, error) {
 	remoteIP := remoteIP(addr)
 
 	container, err := findDockerContainer(remoteIP)

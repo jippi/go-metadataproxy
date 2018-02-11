@@ -87,7 +87,7 @@ func roleInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// assume the role
-	assumeRole, err := assumeRoleFromAWS(*roleInfo.Role.Arn)
+	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn)
 	if err != nil {
 		httpError(err, w, r)
 		return
@@ -125,7 +125,7 @@ func roleNameHandler(w http.ResponseWriter, r *http.Request) {
 	// send the response
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(*roleInfo.Role.RoleName))
+	w.Write([]byte(*roleInfo.RoleName))
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
@@ -148,13 +148,13 @@ func credentialsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// verify the requested role match the container role
 	vars := mux.Vars(r)
-	if vars["requested_role"] != *roleInfo.Role.RoleName {
+	if vars["requested_role"] != *roleInfo.RoleName {
 		httpError(fmt.Errorf("Role names do not match"), w, r)
 		return
 	}
 
 	// assume the container role
-	assumeRole, err := assumeRoleFromAWS(*roleInfo.Role.Arn)
+	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn)
 	if err != nil {
 		log.Error(err)
 		http.NotFound(w, r)
