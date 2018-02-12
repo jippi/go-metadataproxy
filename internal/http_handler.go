@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"expvar"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-
 	"github.com/gorilla/mux"
 	"github.com/newrelic/go-agent"
 	"github.com/prometheus/client_golang/prometheus"
@@ -77,8 +75,6 @@ func StarServer() {
 		log.Fatal(err)
 	}
 
-	// make sure expvar doesn't get cleaned up from imports
-	expvar.NewInt("keep-alive")
 }
 
 // handles: /{api_version}/meta-data/iam/info
@@ -302,7 +298,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
-	metrics.IncrCounterWithLabels([]string{"http_hits"}, 1, []metrics.Label{
+	metrics.IncrCounterWithLabels([]string{"http_request"}, 1, []metrics.Label{
 		metrics.Label{Name: "request_path", Value: "/metrics"},
 		metrics.Label{Name: "handler_name", Value: "metrics"},
 	})
