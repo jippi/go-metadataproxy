@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	metrics "github.com/armon/go-metrics"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -16,25 +17,25 @@ func remoteIP(addr string) string {
 	return strings.Split(addr, ":")[0]
 }
 
-func findContainerRoleByAddress(addr string) (*iam.Role, error) {
+func findContainerRoleByAddress(addr string, labels []metrics.Label) (*iam.Role, []metrics.Label, error) {
 	remoteIP := remoteIP(addr)
 
-	container, err := findDockerContainer(remoteIP)
+	container, labels, err := findDockerContainer(remoteIP, labels)
 	if err != nil {
-		return nil, err
+		return nil, labels, err
 	}
 
 	roleName, err := findDockerContainerIAMRole(container)
 	if err != nil {
-		return nil, err
+		return nil, labels, err
 	}
 
 	role, err := readRoleFromAWS(roleName)
 	if err != nil {
-		return nil, err
+		return nil, labels, err
 	}
 
-	return role, nil
+	return role, labels, nil
 }
 
 func isCompatibleAPIVersion(r *http.Request) bool {

@@ -98,7 +98,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr)
+	roleInfo, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
@@ -156,7 +156,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr)
+	roleInfo, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
@@ -196,7 +196,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr)
+	roleInfo, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})

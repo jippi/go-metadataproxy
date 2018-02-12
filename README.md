@@ -55,6 +55,8 @@ script, or set via docker environment variables.
 | `DOCKER_URL` | String | unix://var/run/docker.sock | Url of the docker daemon. The default is to access docker via its socket. |
 | `NEWRELIC_APP_NAME` | String | | (Optional) NewRelic application name. |
 | `NEWRELIC_LICENSE` | String | | (Optional) NewRelic license key. |
+| `COPY_DOCKER_LABELS` | String | | (Optional) a comma separated list of optional case-senstivie Docker labels to copy into telemetry labels. When copied to telemetry label, the string is automatically lower-cased. (example `COPY_DOCKER_LABELS=PROJECT_VERSION,SOMETHING_ELSE`) |
+| `COPY_DOCKER_ENV` | String | | (Optional) a comma separated list of optional case-senstivie Docker env key/value to copy into telemetry labels. When copied to telemetry label, the string is automatically lower-cased. (example `COPY_DOCKER_ENV=PROJECT_VERSION,SOMETHING_ELSE`) |
 | `STATSITE_ADDR` | String | | (Optional) Address for a `statsite` server. |
 | `STATSD_ADDR` | String | | (Optional) Address for a `statsd` server. |
 | `DATADOG_ADDR` | String | | (Optional) Address for a `DataDog statsd` server. |
@@ -76,6 +78,8 @@ Labels will be emitted as tags for backends using that.
 - `response_code` is the response code to the client connecting to go-metadataproxy. All failures result in a `404` code, otherwise `200`
   - `error_description` If the `response_code` is `404`, this label will contain a description of why - otherwise omitted
 - `service` Always set to `go-metadataproxy`
+
+Additional labels from `COPY_DOCKER_LABELS` and `COPY_DOCKER_ENV` will be appended to the list above.
 
 | Key | Type | Labels | Description |
 | --- | ---- | ------ | ----------- |
