@@ -112,7 +112,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	labels = append(labels, metrics.Label{Name: "role_name", Value: *roleInfo.RoleName})
 
 	// assume the role
-	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn)
+	assumeRole, labels, err := assumeRoleFromAWS(*roleInfo.Arn, labels)
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
@@ -217,7 +217,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// assume the container role
-	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn)
+	assumeRole, labels, err := assumeRoleFromAWS(*roleInfo.Arn, labels)
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})

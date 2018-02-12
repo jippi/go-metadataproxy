@@ -49,7 +49,7 @@ func findDockerContainer(ip string, labels []metrics.Label) (*docker.Container, 
 	for _, container := range containers {
 		for name, network := range container.Networks.Networks {
 			if network.IPAddress == ip {
-				log.Info("Found container IP %s in %+v wihthin network %s", ip, container.Names, name)
+				log.Infof("Found container IP %s in %+v wihthin network %s", ip, container.Names, name)
 
 				inspectedContainer, err := dockerClient.InspectContainer(container.ID)
 				if err != nil {

@@ -3,6 +3,7 @@ package internal
 import (
 	"time"
 
+	"github.com/armon/go-metrics"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
@@ -34,13 +35,17 @@ func ConfigureAWS() {
 	stsService = sts.New(cfg)
 }
 
-func readRoleFromAWS(role string) (*iam.Role, error) {
+func readRoleFromAWS(role string, labels []metrics.Label) (*iam.Role, []metrics.Label, error) {
 	log.Infof("Looking for IAM role for %s", role)
 
 	if roleObject, ok := roleCache.Get(role); ok {
+		labels = append(labels, metrics.Label{Name: "read_role_from_aws_cache", Value: "hit"})
+
 		log.Infof("Found IAM role %s in cache", role)
-		return roleObject.(*iam.Role), nil
+		return roleObject.(*iam.Role), labels, nil
 	}
+
+	labels = append(labels, metrics.Label{Name: "read_role_from_aws_cache", Value: "miss"})
 
 	log.Infof("Requesting IAM role info for %s from AWS", role)
 	req := iamService.GetRoleRequest(&iam.GetRoleInput{
@@ -49,21 +54,24 @@ func readRoleFromAWS(role string) (*iam.Role, error) {
 
 	resp, err := req.Send()
 	if err != nil {
-		return nil, err
+		return nil, labels, err
 	}
 
 	roleCache.Set(role, resp.Role, 6*time.Hour)
 
-	return resp.Role, nil
+	return resp.Role, labels, nil
 }
 
-func assumeRoleFromAWS(arn string) (*sts.AssumeRoleOutput, error) {
+func assumeRoleFromAWS(arn string, labels []metrics.Label) (*sts.AssumeRoleOutput, []metrics.Label, error) {
 	log.Infof("Looking for STS Assume Role for %s", arn)
 
 	if assumedRole, ok := permissionCache.Get(arn); ok {
+		labels = append(labels, metrics.Label{Name: "assume_role_from_aws_cache", Value: "hit"})
+
 		log.Infof("Found STS Assume Role %s in cache", arn)
-		return assumedRole.(*sts.AssumeRoleOutput), nil
+		return assumedRole.(*sts.AssumeRoleOutput), labels, nil
 	}
+	labels = append(labels, metrics.Label{Name: "assume_role_from_aws_cache", Value: "miss"})
 
 	log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
 	req := stsService.AssumeRoleRequest(&sts.AssumeRoleInput{
@@ -73,7 +81,7 @@ func assumeRoleFromAWS(arn string) (*sts.AssumeRoleOutput, error) {
 
 	assumedRole, err := req.Send()
 	if err != nil {
-		return nil, err
+		return nil, labels, err
 	}
 
 	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - 1*time.Minute
@@ -82,5 +90,5 @@ func assumeRoleFromAWS(arn string) (*sts.AssumeRoleOutput, error) {
 
 	permissionCache.Set(arn, assumedRole, ttl)
 
-	return assumedRole, nil
+	return assumedRole, labels, nil
 }

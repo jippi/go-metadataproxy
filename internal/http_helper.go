@@ -30,7 +30,7 @@ func findContainerRoleByAddress(addr string, labels []metrics.Label) (*iam.Role,
 		return nil, labels, err
 	}
 
-	role, err := readRoleFromAWS(roleName)
+	role, labels, err := readRoleFromAWS(roleName, labels)
 	if err != nil {
 		return nil, labels, err
 	}
