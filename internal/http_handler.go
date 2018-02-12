@@ -1,14 +1,19 @@
 package internal
 
 import (
+	"expvar"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/armon/go-metrics"
+
 	"github.com/gorilla/mux"
 	"github.com/newrelic/go-agent"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,17 +31,23 @@ func StarServer() {
 			log.Fatal(err)
 		}
 
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info", roleInfoHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info/{junk}", roleInfoHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/", roleNameHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/{requested_role}", credentialsHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info", iamInfoHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/{rest:.*}", passthroughHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/metrics", metricsHandler))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/favicon.ico", notFoundHandler))
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{rest:.*}", passthroughHandler))
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/", passthroughHandler))
 	} else {
-		r.HandleFunc("/{api_version}/meta-data/iam/info", roleInfoHandler)
-		r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", roleInfoHandler)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", roleNameHandler)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", credentialsHandler)
+		r.HandleFunc("/{api_version}/meta-data/iam/info", iamInfoHandler)
+		r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler)
+		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName)
+		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole)
+		r.HandleFunc("/{api_version}/{rest:.*}", passthroughHandler)
+		r.HandleFunc("/metrics", metricsHandler)
+		r.HandleFunc("/favicon.ico", notFoundHandler)
 		r.HandleFunc("/{rest:.*}", passthroughHandler)
 		r.HandleFunc("/", passthroughHandler)
 	}
@@ -65,12 +76,23 @@ func StarServer() {
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
+
+	// make sure expvar doesn't get cleaned up from imports
+	expvar.NewInt("keep-alive")
 }
 
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
-func roleInfoHandler(w http.ResponseWriter, r *http.Request) {
+func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
+
+	// setup basic telemetry
+	vars := mux.Vars(r)
+	labels := []metrics.Label{
+		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "request_path", Value: "/meta-data/iam/info"},
+		metrics.Label{Name: "handler_name", Value: "iam-info-handler"},
+	}
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
@@ -82,13 +104,24 @@ func roleInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr)
 	if err != nil {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
 		httpError(err, w, r)
 		return
 	}
 
+	// append role name to future telemetry
+	labels = append(labels, metrics.Label{Name: "role_name", Value: *roleInfo.RoleName})
+
 	// assume the role
 	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn)
 	if err != nil {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
 		httpError(err, w, r)
 		return
 	}
@@ -102,11 +135,22 @@ func roleInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJSONResponse(w, response)
+
+	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
+	metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
 }
 
-// handles: {api_version}/meta-data/iam/security-credentials/
-func roleNameHandler(w http.ResponseWriter, r *http.Request) {
+// handles: /{api_version}/meta-data/iam/security-credentials/
+func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
+
+	// setup basic telemetry
+	vars := mux.Vars(r)
+	labels := []metrics.Label{
+		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/"},
+		metrics.Label{Name: "handler_name", Value: "iam-security-credentials-name"},
+	}
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
@@ -118,6 +162,10 @@ func roleNameHandler(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr)
 	if err != nil {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
 		httpError(err, w, r)
 		return
 	}
@@ -126,11 +174,23 @@ func roleNameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(*roleInfo.RoleName))
+
+	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
+	metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
-func credentialsHandler(w http.ResponseWriter, r *http.Request) {
+func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
+
+	// setup basic telemetry
+	vars := mux.Vars(r)
+	labels := []metrics.Label{
+		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/{requested_role}"},
+		metrics.Label{Name: "requested_role", Value: vars["requested_role"]},
+		metrics.Label{Name: "handler_name", Value: "iam-security-crentials-for-role"},
+	}
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
@@ -142,13 +202,20 @@ func credentialsHandler(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr)
 	if err != nil {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
 		httpError(err, w, r)
 		return
 	}
 
 	// verify the requested role match the container role
-	vars := mux.Vars(r)
 	if vars["requested_role"] != *roleInfo.RoleName {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "role_names_do_not_match"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
 		httpError(fmt.Errorf("Role names do not match"), w, r)
 		return
 	}
@@ -156,6 +223,10 @@ func credentialsHandler(w http.ResponseWriter, r *http.Request) {
 	// assume the container role
 	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn)
 	if err != nil {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
 		log.Error(err)
 		http.NotFound(w, r)
 		return
@@ -174,11 +245,22 @@ func credentialsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// send response
 	sendJSONResponse(w, response)
+
+	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
+	metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
 }
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
+
+	// setup basic telemetry
+	vars := mux.Vars(r)
+	labels := []metrics.Label{
+		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "request_path", Value: r.URL.String()},
+		metrics.Label{Name: "handler_name", Value: "passthrough"},
+	}
 
 	r.RequestURI = ""
 
@@ -190,17 +272,63 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create HTTP client
-	client := &http.Client{}
+	tp := newTransport()
+	client := &http.Client{Transport: tp}
+	defer func() {
+		metrics.SetGaugeWithLabels([]string{"aws_response_time"}, float32(tp.Duration()), labels)
+		metrics.SetGaugeWithLabels([]string{"aws_request_time"}, float32(tp.ReqDuration()), labels)
+		metrics.SetGaugeWithLabels([]string{"aws_connection_time"}, float32(tp.ConnDuration()), labels)
+	}()
 
 	// use the incoming http request to construct upstream request
 	resp, err := client.Do(r)
 	if err != nil {
-		http.Error(w, "Server Error", http.StatusInternalServerError)
-		log.Fatal("ServeHTTP:", err)
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
+		metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+
+		httpError(fmt.Errorf("Could not proxy request: %s", err), w, r)
+		return
 	}
 	defer resp.Body.Close()
 
 	w.Header().Add("X-Powered-By", "go-metadataproxy")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
+
+	labels = append(labels, metrics.Label{Name: "response_code", Value: fmt.Sprintf("%v", resp.StatusCode)})
+	metrics.IncrCounterWithLabels([]string{"http_request"}, 1, labels)
+}
+
+// handles: /metrics
+func metricsHandler(w http.ResponseWriter, r *http.Request) {
+	metrics.IncrCounterWithLabels([]string{"http_hits"}, 1, []metrics.Label{
+		metrics.Label{Name: "request_path", Value: "/metrics"},
+		metrics.Label{Name: "handler_name", Value: "metrics"},
+	})
+
+	if os.Getenv("ENABLE_PROMETHEUS") != "" {
+		handlerOptions := promhttp.HandlerOpts{
+			ErrorLog:           log.New(),
+			ErrorHandling:      promhttp.ContinueOnError,
+			DisableCompression: true,
+		}
+
+		handler := promhttp.HandlerFor(prometheus.DefaultGatherer, handlerOptions)
+		handler.ServeHTTP(w, r)
+		return
+	}
+
+	data, err := telemetry.DisplayMetrics(w, r)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	sendJSONResponse(w, data)
+}
+
+// handles: /favicon.ico
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	http.NotFound(w, r)
 }

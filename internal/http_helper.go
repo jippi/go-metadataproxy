@@ -2,8 +2,10 @@ package internal
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/gorilla/mux"
@@ -53,4 +55,57 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	encoder.Encode(response)
+}
+
+type customTransport struct {
+	rtp       http.RoundTripper
+	dialer    *net.Dialer
+	connStart time.Time
+	connEnd   time.Time
+	reqStart  time.Time
+	reqEnd    time.Time
+}
+
+func newTransport() *customTransport {
+	tr := &customTransport{
+		dialer: &net.Dialer{
+			Timeout:   5 * time.Second,
+			KeepAlive: 5 * time.Second,
+		},
+	}
+
+	tr.rtp = &http.Transport{
+		Proxy:               http.ProxyFromEnvironment,
+		Dial:                tr.dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+
+	return tr
+}
+
+func (tr *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	tr.reqStart = time.Now()
+	resp, err := tr.rtp.RoundTrip(r)
+	tr.reqEnd = time.Now()
+	return resp, err
+}
+
+func (tr *customTransport) dial(network, addr string) (net.Conn, error) {
+	tr.connStart = time.Now()
+	cn, err := tr.dialer.Dial(network, addr)
+	tr.connEnd = time.Now()
+
+	return cn, err
+}
+
+func (tr *customTransport) ReqDuration() time.Duration {
+	return tr.Duration() - tr.ConnDuration()
+}
+
+func (tr *customTransport) ConnDuration() time.Duration {
+	return tr.connEnd.Sub(tr.connStart)
+}
+
+func (tr *customTransport) Duration() time.Duration {
+	return tr.reqEnd.Sub(tr.reqStart)
 }

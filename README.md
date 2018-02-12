@@ -55,6 +55,34 @@ script, or set via docker environment variables.
 | `DOCKER_URL` | String | unix://var/run/docker.sock | Url of the docker daemon. The default is to access docker via its socket. |
 | `NEWRELIC_APP_NAME` | String | | (Optional) NewRelic application name. |
 | `NEWRELIC_LICENSE` | String | | (Optional) NewRelic license key. |
+| `STATSITE_ADDR` | String | | (Optional) Address for a `statsite` server. |
+| `STATSD_ADDR` | String | | (Optional) Address for a `statsd` server. |
+| `DATADOG_ADDR` | String | | (Optional) Address for a `DataDog statsd` server. |
+| `ENABLE_PROMETHEUS` | Bool | | (Optional) Enable `Prometheus` endpoint. Exposed at `/metrics` endpoint |
+
+#### Telemetry
+
+Labels will be emitted as tags for backends using that.
+
+- `api_version` will be set if for all requests expect `/` (which don't contain the meta-data version in the url path)
+- `handler_name` will be set to the internal method being used to serve the request
+  - `iam-info-handler` will be used for `/{api_version}/meta-data/iam/info`
+  - `iam-security-credentials-name` will be used for `/{api_version}/meta-data/iam/security-credentials/`
+  - `iam-security-crentials-for-role` will be used for `/{api_version}/meta-data/iam/security-credentials/{requested_role}`
+  - `metrics` will be used for `/metrics`
+  - `passthrough` will be used for all other requests
+- `role_name` will be included if go-metadataproxy found a IAM role during the request
+- `request_path` is the full URL path for the request
+- `response_code` is the response code to the client connecting to go-metadataproxy. All failures result in a `404` code, otherwise `200`
+  - `error_description` If the `response_code` is `404`, this label will contain a description of why - otherwise omitted
+- `service` Always set to `go-metadataproxy`
+
+| Key | Type | Labels | Description |
+| --- | ---- | ------ | ----------- |
+| `http_request` | `counter` | `api_version`, `request_path`, `response_code`, `error_description`, `role_name`, `handler_name`, `service` | Emitted for each HTTP request proxied, availbility of the labels depend on the request and AWS response |
+| `aws_response_time` | `gauage` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The full request time while talking to AWS meta-data endpoint. |
+| `aws_request_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The request time while talking to AWS meta-data endpoint. |
+| `aws_connection_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The connect time while talking to AWS meta-data endpoint. |
 
 #### Default Roles
 
@@ -90,18 +118,19 @@ The following are all supported formats for specifying roles:
 A useful way to deploy this go-metadataproxy is with a two-tier role
 structure:
 
-1.  The first tier is the EC2 service role for the instances running
-    your containers.  Call it `DockerHostRole`.  Your instances must
-    be launched with a policy that assigns this role.
+1. The first tier is the EC2 service role for the instances running
+   your containers.  Call it `DockerHostRole`.  Your instances must
+   be launched with a policy that assigns this role.
 
-2.  The second tier is the role that each container will use.  These
-    roles must trust your own account ("Role for Cross-Account
-    Access" in AWS terms).  Call it `ContainerRole1`.
+2. The second tier is the role that each container will use.  These
+   roles must trust your own account ("Role for Cross-Account
+   Access" in AWS terms).  Call it `ContainerRole1`.
 
-3.  go-metadataproxy needs to query and assume the container role.  So
-    the `DockerHostRole` policy must permit this for each container
-    role.  For example:
-    ```
+3. go-metadataproxy needs to query and assume the container role.  So
+   the `DockerHostRole` policy must permit this for each container
+   role.  For example:
+
+   ```json
     "Statement": [ {
         "Effect": "Allow",
         "Action": [
@@ -119,7 +148,7 @@ structure:
 
 Note: The `ContainerRole1` role should have a trust relationship that allows it to be assumed by the `user` which is associated to the host machine running the `sts:AssumeRole` command.  An example trust relationship for `ContainRole1` may look like:
 
-```
+```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -141,7 +170,7 @@ Using iptables, we can forward traffic meant to 169.254.169.254 from docker0 to
 the go-metadataproxy. The following example assumes the go-metadataproxy is run on
 the host, and not in a container:
 
-```
+```bash
 /sbin/iptables \
   --append PREROUTING \
   --destination 169.254.169.254 \
@@ -163,7 +192,7 @@ Be aware that non-host-mode containers will not be able to contact
 the meta-data service to find the local address.  In this case, you
 probably want to restrict proxy access to the docker0 interface!
 
-```
+```bash
 LOCAL_IPV4=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 
 /sbin/iptables \
@@ -192,7 +221,7 @@ LOCAL_IPV4=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 In the following we assume \_my\_config\_ is a bash file with exports for all of
 the necessary settings discussed in the configuration section.
 
-```
+```bash
 source my_config
 cd /srv/go-metadataproxy
 go run main.go
@@ -202,6 +231,7 @@ go run main.go
 
 For production purposes, you'll want to kick up a container to run.
 You can build one with the included Dockerfile.  To run, do something like:
+
 ```bash
 docker run --net=host \
     -v /var/run/docker.sock:/var/run/docker.sock \

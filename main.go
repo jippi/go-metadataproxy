@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
+	internal.ConfigureTelemetry()
 	internal.ConfigureDocker()
 	internal.ConfigureAWS()
 	internal.StarServer()

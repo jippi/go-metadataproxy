@@ -51,13 +51,13 @@ required = ["github.com/davecgh/go-spew/spew"]
   version = "1.1.0"
 
 [[constraint]]
-  name = "github.com/coocood/freecache"
-  version = "1.0.0"
-
-[[constraint]]
   name = "github.com/patrickmn/go-cache"
   version = "2.1.0"
 
 [[constraint]]
   name = "github.com/newrelic/go-agent"
   version = "1.11.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/armon/go-metrics"

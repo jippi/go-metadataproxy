@@ -11,6 +11,12 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  name = "github.com/DataDog/datadog-go"
+  packages = ["statsd"]
+  revision = "9487d3a9d3be5bf3cf60b86ae810b97926964515"
+  version = "2.0.0"
+
+[[projects]]
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
   revision = "7da180ee92d8bd8bb8c37fc560e673e6557c392f"
@@ -21,6 +27,16 @@
   name = "github.com/Nvveen/Gotty"
   packages = ["."]
   revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/armon/go-metrics"
+  packages = [
+    ".",
+    "datadog",
+    "prometheus"
+  ]
+  revision = "7aa49fde808223f8dadfdbfd3a20ff6c19e5f9ec"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go-v2"
@@ -47,6 +63,12 @@
   ]
   revision = "b8e7febd4b80c6517240e473410b54d4e63fed1d"
   version = "v2.0.0-preview.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/beorn7/perks"
+  packages = ["quantile"]
+  revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
   branch = "master"
@@ -122,6 +144,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
@@ -134,9 +162,27 @@
   version = "v1.6.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-immutable-radix"
+  packages = ["."]
+  revision = "7f3cd4390caab3250a57f30efdb2a65dd7649ecf"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = ["simplelru"]
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+
+[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
+
+[[projects]]
+  name = "github.com/matttproud/golang_protobuf_extensions"
+  packages = ["pbutil"]
+  revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/newrelic/go-agent"
@@ -189,6 +235,42 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/prometheus/client_golang"
+  packages = [
+    "prometheus",
+    "prometheus/promhttp"
+  ]
+  revision = "c5b7fccd204277076155f10851dad72b76a49317"
+  version = "v0.8.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/client_model"
+  packages = ["go"]
+  revision = "99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/common"
+  packages = [
+    "expfmt",
+    "internal/bitbucket.org/ww/goautoneg",
+    "model"
+  ]
+  revision = "89604d197083d4781071d3c65855d24ecfb0a563"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/procfs"
+  packages = [
+    ".",
+    "internal/util",
+    "nfs",
+    "xfs"
+  ]
+  revision = "cb4147076ac75738c9a7d279075a253c0cc5acbd"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
@@ -221,6 +303,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0c6232d4026a38779ba9a8f75dc3211a8216792866ff64a365849e5b8bdbc1ea"
+  inputs-digest = "0f731f18f758ea6434d8f95f200ffedbe6faece0340b6086a9d07e3be8eec4cc"
   solver-name = "gps-cdcl"
   solver-version = 1
