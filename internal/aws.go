@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/armon/go-metrics"
@@ -38,6 +40,8 @@ func ConfigureAWS() {
 func readRoleFromAWS(role string, labels []metrics.Label) (*iam.Role, []metrics.Label, error) {
 	log.Infof("Looking for IAM role for %s", role)
 
+	roleObject := &iam.Role{}
+
 	if roleObject, ok := roleCache.Get(role); ok {
 		labels = append(labels, metrics.Label{Name: "read_role_from_aws_cache", Value: "hit"})
 
@@ -47,19 +51,41 @@ func readRoleFromAWS(role string, labels []metrics.Label) (*iam.Role, []metrics.
 
 	labels = append(labels, metrics.Label{Name: "read_role_from_aws_cache", Value: "miss"})
 
-	log.Infof("Requesting IAM role info for %s from AWS", role)
-	req := iamService.GetRoleRequest(&iam.GetRoleInput{
-		RoleName: aws.String(role),
-	})
+	if strings.Contains(role, "@") { // IAM_ROLE=my-role@012345678910
+		log.Infof("Constructing IAM role info for %s manually", role)
+		chunks := strings.SplitN(role, "@", 2)
+		nameChunks := strings.Split(chunks[0], "/")
 
-	resp, err := req.Send()
-	if err != nil {
-		return nil, labels, err
+		roleObject = &iam.Role{
+			Arn:      aws.String(fmt.Sprintf("arn:aws:iam::%s:role/%s", chunks[1], strings.TrimLeft(chunks[0], "/"))),
+			RoleName: aws.String(nameChunks[len(nameChunks)-1]),
+		}
+	} else if strings.HasPrefix(role, "arn:aws:iam") { // IAM_ROLE=arn:aws:iam::012345678910:role/my-role
+		log.Infof("Using IAM role ARN as is for %s", role)
+
+		chunks := strings.SplitN(role, ":role/", 2)
+		nameChunks := strings.Split(chunks[1], "/")
+
+		roleObject = &iam.Role{
+			Arn:      aws.String(role),
+			RoleName: aws.String(nameChunks[len(nameChunks)-1]),
+		}
+	} else { // IAM_ROLE=my-role
+		log.Infof("Requesting IAM role info for %s from AWS", role)
+		req := iamService.GetRoleRequest(&iam.GetRoleInput{
+			RoleName: aws.String(role),
+		})
+
+		resp, err := req.Send()
+		if err != nil {
+			return nil, labels, err
+		}
+
+		roleObject = resp.Role
 	}
 
-	roleCache.Set(role, resp.Role, 6*time.Hour)
-
-	return resp.Role, labels, nil
+	roleCache.Set(role, roleObject, 6*time.Hour)
+	return roleObject, labels, nil
 }
 
 func assumeRoleFromAWS(arn string, labels []metrics.Label) (*sts.AssumeRoleOutput, []metrics.Label, error) {
