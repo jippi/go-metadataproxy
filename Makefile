@@ -2,7 +2,7 @@ VETARGS		?=-all
 GIT_COMMIT 	:= $(shell git describe --tags)
 GIT_DIRTY 	:= $(if $(shell git status --porcelain),+CHANGES)
 GO_LDFLAGS 	:= "-X main.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)"
-GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/")
 BUILD_DIR ?= $(abspath build)
 
 $(BUILD_DIR):
@@ -26,7 +26,7 @@ install:
 .PHONY: fmt
 fmt:
 	@echo "=> Running go fmt" ;
-	@if [ -n "`go fmt ${GOFILES_NOVENDOR}`" ]; then \
+	@if [ -n "`go fmt .`" ]; then \
 		echo "[ERR] go fmt updated formatting. Please commit formatted code first."; \
 		exit 1; \
 	fi
