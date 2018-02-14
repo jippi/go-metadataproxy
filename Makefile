@@ -2,7 +2,7 @@ VETARGS		?=-all
 GIT_COMMIT 	:= $(shell git describe --tags)
 GIT_DIRTY 	:= $(if $(shell git status --porcelain),+CHANGES)
 GO_LDFLAGS 	:= "-X main.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)"
-GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/")
+GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 BUILD_DIR ?= $(abspath build)
 
 $(BUILD_DIR):
