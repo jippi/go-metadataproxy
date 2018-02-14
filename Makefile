@@ -13,8 +13,8 @@ GOBUILD ?= $(shell go env GOOS)-$(shell go env GOARCH)
 GET_GOOS   = $(word 1,$(subst -, ,$1))
 GET_GOARCH = $(word 2,$(subst -, ,$1))
 
-BINARIES = $(addprefix $(BUILD_DIR)/go-metadaproxy-, $(GOBUILD))
-$(BINARIES): $(BUILD_DIR)/go-metadaproxy-%: $(BUILD_DIR)
+BINARIES = $(addprefix $(BUILD_DIR)/go-metadataproxy-, $(GOBUILD))
+$(BINARIES): $(BUILD_DIR)/go-metadataproxy-%: $(BUILD_DIR)
 	@echo "=> building $@ ..."
 	GOOS=$(call GET_GOOS,$*) GOARCH=$(call GET_GOARCH,$*) CGO_ENABLED=0 go build -o $@ -ldflags $(GO_LDFLAGS)
 
@@ -82,7 +82,7 @@ docker:
 
 .PHONY: build-linux
 build-linux:
-	GOOS=linux GOARCH=amd64 go build -o build/go-metadaproxy-linux-amd64
-	ssh 10.30.68.202 "sudo killall -9 go-metadaproxy-linux-amd64 || exit 0"
-	scp build/go-metadaproxy-linux-amd64 10.30.68.202:/tmp
-	ssh 10.30.68.202 "sudo COPY_DOCKER_ENV=PROJECT_VERSION COPY_DOCKER_LABELS=PROJECT_NAME /tmp/go-metadaproxy-linux-amd64"
+	GOOS=linux GOARCH=amd64 go build -o build/go-metadataproxy-linux-amd64
+	ssh 10.30.68.202 "sudo killall -9 go-metadataproxy-linux-amd64 || exit 0"
+	scp build/go-metadataproxy-linux-amd64 10.30.68.202:/tmp
+	ssh 10.30.68.202 "sudo COPY_DOCKER_ENV=PROJECT_VERSION COPY_DOCKER_LABELS=PROJECT_NAME /tmp/go-metadataproxy-linux-amd64"
