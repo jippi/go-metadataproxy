@@ -16,7 +16,7 @@ var (
 
 // ConfigureTelemetry will configure telemetry sinks
 func ConfigureTelemetry() {
-	metricsConf := metrics.DefaultConfig("go-metadataproxy")
+	metricsConf := metrics.DefaultConfig("metadataproxy")
 	metricsConf.EnableHostname = false
 	metricsConf.EnableRuntimeMetrics = true
 	metricsConf.EnableServiceLabel = true
