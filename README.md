@@ -83,10 +83,10 @@ Additional labels from `COPY_DOCKER_LABELS` and `COPY_DOCKER_ENV` will be append
 
 | Key | Type | Labels | Description |
 | --- | ---- | ------ | ----------- |
-| `http_request` | `counter` | `api_version`, `request_path`, `response_code`, `error_description`, `role_name`, `handler_name`, `service` | Emitted for each HTTP request proxied, availbility of the labels depend on the request and AWS response |
-| `aws_response_time` | `gauage` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The full request time while talking to AWS meta-data endpoint. |
-| `aws_request_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The request time while talking to AWS meta-data endpoint. |
-| `aws_connection_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The connect time while talking to AWS meta-data endpoint. |
+| `metadataproxy.http_request` | `counter` | `api_version`, `request_path`, `response_code`, `error_description`, `role_name`, `handler_name`, `service` | Emitted for each HTTP request proxied, availbility of the labels depend on the request and AWS response |
+| `metadataproxy.aws_response_time` | `gauage` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The full request time while talking to AWS meta-data endpoint. |
+| `metadataproxy.aws_request_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The request time while talking to AWS meta-data endpoint. |
+| `metadataproxy.aws_connection_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The connect time while talking to AWS meta-data endpoint. |
 
 #### Default Roles
 

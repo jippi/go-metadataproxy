@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	telemetryRequestKey = "metadataproxy_http_request"
+	telemetryPrefix = "metadataproxy"
 )
 
 // StarServer will start the HTTP server (blocking)
@@ -106,7 +106,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		httpError(err, w, r)
 		return
@@ -137,7 +137,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	sendJSONResponse(w, response)
 
 	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
-	metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
@@ -164,7 +164,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		httpError(err, w, r)
 		return
@@ -176,7 +176,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(*roleInfo.RoleName))
 
 	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
-	metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
@@ -204,7 +204,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		httpError(err, w, r)
 		return
@@ -214,7 +214,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	if vars["requested_role"] != *roleInfo.RoleName {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "role_names_do_not_match"})
-		metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		httpError(fmt.Errorf("Role names do not match"), w, r)
 		return
@@ -225,7 +225,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
-		metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		log.Error(err)
 		http.NotFound(w, r)
@@ -247,7 +247,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	sendJSONResponse(w, response)
 
 	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
-	metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 }
 
 // handles: /*
@@ -275,9 +275,9 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	tp := newTransport()
 	client := &http.Client{Transport: tp}
 	defer func() {
-		metrics.SetGaugeWithLabels([]string{"aws_response_time"}, float32(tp.Duration()), labels)
-		metrics.SetGaugeWithLabels([]string{"aws_request_time"}, float32(tp.ReqDuration()), labels)
-		metrics.SetGaugeWithLabels([]string{"aws_connection_time"}, float32(tp.ConnDuration()), labels)
+		metrics.SetGaugeWithLabels([]string{telemetryPrefix, "aws_response_time"}, float32(tp.Duration()), labels)
+		metrics.SetGaugeWithLabels([]string{telemetryPrefix, "aws_request_time"}, float32(tp.ReqDuration()), labels)
+		metrics.SetGaugeWithLabels([]string{telemetryPrefix, "aws_connection_time"}, float32(tp.ConnDuration()), labels)
 	}()
 
 	// use the incoming http request to construct upstream request
@@ -285,7 +285,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
-		metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		httpError(fmt.Errorf("Could not proxy request: %s", err), w, r)
 		return
@@ -297,12 +297,12 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, resp.Body)
 
 	labels = append(labels, metrics.Label{Name: "response_code", Value: fmt.Sprintf("%v", resp.StatusCode)})
-	metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, labels)
+	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 }
 
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
-	metrics.IncrCounterWithLabels([]string{telemetryRequestKey}, 1, []metrics.Label{
+	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, []metrics.Label{
 		metrics.Label{Name: "request_path", Value: "/metrics"},
 		metrics.Label{Name: "handler_name", Value: "metrics"},
 	})
