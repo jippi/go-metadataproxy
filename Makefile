@@ -2,9 +2,7 @@ VETARGS		?=-all
 GIT_COMMIT 	:= $(shell git describe --tags)
 GIT_DIRTY 	:= $(if $(shell git status --porcelain),+CHANGES)
 GO_LDFLAGS 	:= "-X main.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)"
-
 GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
-
 BUILD_DIR ?= $(abspath build)
 
 $(BUILD_DIR):
@@ -70,6 +68,14 @@ dist-clean: clean
 test:
 	@echo "==> Running $@..."
 	@go test -v -tags $(shell go list ./... | grep -v vendor)
+
+.PHONY: docker
+docker:
+	@echo "=> build and push Docker image ..."
+	@docker login -u $(DOCKER_USER) -p $(DOCKER_PASS)
+	docker build -f Dockerfile -t jippi/go-metadataproxy:$(COMMIT) .
+	docker tag jippi/go-metadataproxy:$(COMMIT) jippi/go-metadataproxy:$(TAG)
+	docker push jippi/go-metadataproxy:$(TAG)
 
 .PHONY: build-linux
 build-linux:

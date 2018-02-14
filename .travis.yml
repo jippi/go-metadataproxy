@@ -1,0 +1,46 @@
+sudo: required
+
+language: go
+
+go:
+  - 1.9
+
+services:
+  - docker
+
+cache:
+  directories:
+    - vendor/
+
+env:
+  global:
+    - GOBUILD="linux-amd64 windows-amd64 darwin-amd64"
+    # DOCKER_USER
+    - secure: "X7dEkAncrHNdqqjhMe4MRzMjUEO87C1FE4PpIaDNYx4moI05+dIjwBBlE1UBRKHgmPth53N5/JkFGQbvqvYaDn/OFgK+n87nyjW6TNOFNJmoC0jKOnHhXFasFu9Im8zO6rqCk4pin+2u6X5VXacmuAB9G6pH2vS03Kl4sEpcSyV926spmA8cMwgMdWyiILced5+9pUZkcMQN+Gx1Tok418KfTFnSrY5CGbs0mdsL9zmxqgyQns88D03ew+yR2vwMgX4ZA6C7A5ROe3qa+/kEcGePovbFgmGMDDhWZsBJ6JrXFqnkUE2i4FJIe1/WAdv9/wrAKtAdCQ7DuQnA6zCYk1UPBdXq3qHklbPPl46IJ4PgvDxMu/lumBbrIjwA1p9Se6q6DoQ7/hIFghSYvDViu6AFr1uq662wkw+/EvXjntJahEwBBQq9tMOK4madAanbFAkX38eBFEfkON6suPYmFzISq9NqIGdCVc7JETYx5W4KNUSsCuit4fa3jZDwiODstsHughj1lbWFMrTn7NuFHf/u8qGfD2Q5AS/pvm/FkLjCqFGA9F6aLAEDTiZ0U4X9GQAZuZm3+nPBI0u6rMdHBYU8froVEIg1V0ljV53fNJahlezbQ5svxfKEL83rjfZtfK5X+hS1fOv9NmA9YmMbl6256JvtE44KN8PiEgsDmPc="
+    # DOCKER_PASS
+    - secure: "AEJjPuygXG7RoMn0VXn3z6XTk/Ki54XSt+8GROTenpLL2WJzIqOIiVai/H84Gf03EncgC4uDhauTK0y25faKHFdRVfBTV/gX7Xyngvce/UUFNMXYBfDeo1vIDsFOmAi4+cR3U+Ah9fDO8QMrQJcdSntAcWldboYQZEMasTPCoZFBXtedUoRCXDZkFYLXoXLJIuy9eBMNJTzUZRy7GXMqxYimgPeIEzGHpSV1+Gr2uI5ab8OY0p6F/pow3OCIuCt0PM8U59DyBSG8dZlV/XLEaPJ1HbMXce+JEOUyPU6HKB+KxZf0ckFG/nQ+EV5KL1WP1ECgeXsOcQvR8I6gWwlVGbuTdYzsdwfHx6Te4ssbcjKRGuSnv+LEQSLVE7Ve9wTdviiOF/PBZOMrdK+bLe0RUTqM+1Y0CrBkbeT96/YU2zFxl/2ywHSSafOYMFOVwh1fH2NfCFUbGXJZi5J4g4hXOCPz2s6efgFN/v9P2tpJiPCWK0kt2z5VwV+6lm9WKTI6AGOMVIVi5Vkw+DivUwMn5mnpyHxJO8XFtLNW/ZSyPdg+FtCBH/Cxc/srQF0w5wN46fwkDnhGtashj4uJQzlYk+v3S+bMuQAsf1QzqL7Z+zbkRACsSHMtL06kC1qMaSpThc7qjZwKCK7KbN97CYjMN4Nuqh2MGcx1sjG6l3raEJc="
+
+script:
+  - GOBUILD=${GOBUILD} make -j build
+  - ls -la build/
+
+after_success:
+  - export PR=https://api.github.com/repos/$TRAVIS_REPO_SLUG/pulls/$TRAVIS_PULL_REQUEST
+  - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo `curl -s $PR | jq -r .head.ref`; fi)
+  - if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then make -j docker DOCKER_USER=$DOCKER_USER DOCKER_PASS=$DOCKER_PASS TAG=pr-$TRAVIS_PULL_REQUEST COMMIT=$TRAVIS_COMMIT; fi
+  - if [[ "$TRAVIS_TAG" =~ ^v.*$ ]]; then make -j docker DOCKER_USER=$DOCKER_USER DOCKER_PASS=$DOCKER_PASS TAG=$TRAVIS_TAG COMMIT=$TRAVIS_COMMIT; fi
+  - if [[ "$BRANCH" == "master" ]]; then make -j docker DOCKER_USER=$DOCKER_USER DOCKER_PASS=$DOCKER_PASS TAG=latest COMMIT=$TRAVIS_COMMIT; fi
+
+deploy:
+  - provider: releases
+    api_key:
+      secure: my5mVI1iHm2tdC13nyz/+y47UoVwBcsAEwMGSzcdafzAiOGuQosYO8aOnjK2tq7k0qPtD4PMu/mtFbFkCN7k+82OXMp8ZelsTr1sfK/bnHrPtIcHAaG7eZ6JA5McrYypkekyhsqH/4uaAMITidduKemA+zLgYIeUbWjLQNS2mgvF50BQaW37TsD2dFgB1f1eEGmCbl7jIH7iv23cFrjPnXhScS2AgdWEefy1BhABheV1i7Ucr2LNqzLYliiaWmNAb6ZccCMOo8F0/HQvUCR/mphwgo3LFum55wwycuzH/ZPMF50/fTm/TbOIHDjPxSetqfC1954mTleDJUnxkllINV6HI+gLMex+jsdtBbBw64RvvFspJm2BUNrXn02ZBeqrCHLfL9CKzqnbrTMEFwABdYwUGMWL+FaLB1nNfrAm90btZO1CjlqhgPWtDdES47xu/s5uTtQx2+7IMTKPgkrfvtl0MrsprxzFM9utOQ6mGNUrULaixIRq9ZcwiwJaEDrpksLjOFqBgoUAqDcMFlIeNZ0HZ2q2G1BhoYstSBKUYHxEp7eRZO3HrDCtzQrAfeIiEN5zfeDloJYtOSDcZITNyvG+CS+jOqm+U6r6pXCtjWX9hV0NaCTAx7Eq1fw8eChaJgZTnLyMbjxOf+U5ibwcgo0Rwb2bAOLojVbW6DilqvA=
+    file:
+      - build/go-metadataproxy-linux-amd64
+      - build/go-metadataproxy-windows-amd64
+      - build/go-metadataproxy-darwin-amd64
+    skip_cleanup: true
+    overwrite: true
+    on:
+      repo: jippi/go-metadataproxy
+      tags: true
