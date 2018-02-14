@@ -20,7 +20,10 @@ $(BINARIES): $(BUILD_DIR)/go-metadaproxy-%: $(BUILD_DIR)
 
 .PHONY: install
 install:
-	@echo "=> dep ensure..."
+	@echo "=> Installing dep"
+	@go get -u github.com/golang/dep/cmd/dep
+
+	@echo "=> dep ensure"
 	@dep ensure
 
 .PHONY: fmt
