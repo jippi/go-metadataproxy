@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
+	internal.ConfigureLogging()
 	internal.ConfigureTelemetry()
 	internal.ConfigureDocker()
 	internal.ConfigureAWS()

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	metrics "github.com/armon/go-metrics"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,6 +17,7 @@ var (
 	defaultRole      = os.Getenv("DEFAULT_ROLE")
 	copyDockerLabels = strings.Split(os.Getenv("COPY_DOCKER_LABELS"), ",")
 	copyDockerEnvs   = strings.Split(os.Getenv("COPY_DOCKER_ENV"), ",")
+	containerCache   = cache.New(5*time.Minute, 1*time.Minute)
 )
 
 // ConfigureDocker will setup a docker client used during normal operations
@@ -36,48 +39,69 @@ func ConfigureDocker() {
 }
 
 func findDockerContainer(ip string, labels []metrics.Label) (*docker.Container, []metrics.Label, error) {
-	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
-		Filters: map[string][]string{
-			"status": []string{"running"},
-		},
-	})
+	var container *docker.Container
 
-	if err != nil {
-		return nil, labels, err
+	cachedContainer, ok := containerCache.Get(ip)
+	if !ok {
+		logWithLabels(labels).Infof("Looking up container info for %s in docker", ip)
+
+		containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
+			Filters: map[string][]string{
+				"status": []string{"running"},
+			},
+		})
+
+		if err != nil {
+			return nil, labels, err
+		}
+
+		container, err = findContainerByIP(ip, labels, containers)
+		if err != nil {
+			return nil, labels, err
+		}
+
+		containerCache.Set(ip, container, cache.DefaultExpiration)
+	} else {
+		logWithLabels(labels).Infof("Found container info for '%s' in cache", ip)
+		container = cachedContainer.(*docker.Container)
 	}
 
-	for _, container := range containers {
-		for name, network := range container.Networks.Networks {
-			if network.IPAddress == ip {
-				log.Infof("Found container IP %s in %+v wihthin network %s", ip, container.Names, name)
-
-				inspectedContainer, err := dockerClient.InspectContainer(container.ID)
-				if err != nil {
-					return nil, labels, err
-				}
-
-				if len(copyDockerLabels) > 0 {
-					for _, label := range copyDockerLabels {
-						if v, ok := inspectedContainer.Config.Labels[label]; ok {
-							labels = append(labels, metrics.Label{Name: strings.ToLower(label), Value: v})
-						}
-					}
-				}
-
-				if len(copyDockerEnvs) > 0 {
-					for _, label := range copyDockerEnvs {
-						if v, ok := findDockerContainerEnvValue(inspectedContainer, label); ok {
-							labels = append(labels, metrics.Label{Name: strings.ToLower(label), Value: v})
-						}
-					}
-				}
-
-				return inspectedContainer, labels, nil
+	if len(copyDockerLabels) > 0 {
+		for _, label := range copyDockerLabels {
+			if v, ok := container.Config.Labels[label]; ok {
+				labels = append(labels, metrics.Label{Name: strings.ToLower(label), Value: v})
 			}
 		}
 	}
 
-	return nil, labels, fmt.Errorf("Could not find any container with IP %s", ip)
+	if len(copyDockerEnvs) > 0 {
+		for _, label := range copyDockerEnvs {
+			if v, ok := findDockerContainerEnvValue(container, label); ok {
+				labels = append(labels, metrics.Label{Name: strings.ToLower(label), Value: v})
+			}
+		}
+	}
+
+	return container, labels, nil
+}
+
+func findContainerByIP(ip string, labels []metrics.Label, containers []docker.APIContainers) (*docker.Container, error) {
+	for _, container := range containers {
+		for name, network := range container.Networks.Networks {
+			if network.IPAddress == ip {
+				logWithLabels(labels).Infof("Found container IP '%s' in %+v wihthin network '%s'", ip, container.Names, name)
+
+				inspectedContainer, err := dockerClient.InspectContainer(container.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				return inspectedContainer, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("Could not find any container with IP %s", ip)
 }
 
 func findDockerContainerIAMRole(container *docker.Container) (string, error) {

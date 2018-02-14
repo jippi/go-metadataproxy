@@ -271,6 +271,12 @@
   revision = "cb4147076ac75738c9a7d279075a253c0cc5acbd"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/seatgeek/logrus-gelf-formatter"
+  packages = ["."]
+  revision = "76d7e00325a152cdb8bc3b0c829c1d14ce2af8e8"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
@@ -303,6 +309,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0f731f18f758ea6434d8f95f200ffedbe6faece0340b6086a9d07e3be8eec4cc"
+  inputs-digest = "6eff17ef8bb5d14f7143f9f87f3be3c7588ad6335af2e7c70ab0d849e855990d"
   solver-name = "gps-cdcl"
   solver-version = 1

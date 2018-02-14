@@ -51,7 +51,8 @@ script, or set via docker environment variables.
 | -------- | ---- | ------- | ----------- |
 | `DEFAULT_ROLE` | String | | Role to use if IAM\_ROLE is not set in a container's environment. If unset the container will get no IAM credentials. |
 | `DEFAULT_ACCOUNT_ID` | String | | The default account ID to assume roles in, if IAM\_ROLE does not contain account information. If unset, go-metadataproxy will attempt to lookup role ARNs using iam:GetRole. |
-| `DEBUG` | Boolean | False | Enable debug mode. You should not do this in production as it will leak IAM credentials into your logs |
+| `LOG_LEVEL` | String | "info" | Change the log level (`debug`, `info`, `warning`, `error`, `fatal`, `panic`) |
+| `LOG_FORMAT` | String | "text" | Change the log format (`text`, `json`, `gelf`) |
 | `DOCKER_URL` | String | unix://var/run/docker.sock | Url of the docker daemon. The default is to access docker via its socket. |
 | `NEWRELIC_APP_NAME` | String | | (Optional) NewRelic application name. |
 | `NEWRELIC_LICENSE` | String | | (Optional) NewRelic license key. |
@@ -84,9 +85,9 @@ Additional labels from `COPY_DOCKER_LABELS` and `COPY_DOCKER_ENV` will be append
 | Key | Type | Labels | Description |
 | --- | ---- | ------ | ----------- |
 | `metadataproxy.http_request` | `counter` | `api_version`, `request_path`, `response_code`, `error_description`, `role_name`, `handler_name`, `service` | Emitted for each HTTP request proxied, availbility of the labels depend on the request and AWS response |
-| `metadataproxy.aws_response_time` | `gauage` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The full request time while talking to AWS meta-data endpoint. |
-| `metadataproxy.aws_request_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The request time while talking to AWS meta-data endpoint. |
-| `metadataproxy.aws_connection_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The connect time while talking to AWS meta-data endpoint. |
+| `metadataproxy.aws_response_time` | `gauage` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The full request time (in nanoseconds) when talking to AWS meta-data endpoint. |
+| `metadataproxy.aws_request_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The request time (in nanoseconds) when talking to AWS meta-data endpoint. |
+| `metadataproxy.aws_connection_time` | `gauge` | `api_version`, `request_path`, `response_code`, `role_name`, `handler_name`, `service` | The connect time (in nanoseconds) when talking to AWS meta-data endpoint. |
 
 #### Default Roles
 

@@ -96,7 +96,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		log.Info("Request is using too old version of meta-data API, passing through directly")
+		logWithLabels(labels).Info("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
@@ -154,7 +154,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		log.Info("Request is using too old version of meta-data API, passing through directly")
+		logWithLabels(labels).Info("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
@@ -194,7 +194,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		log.Info("Request is using too old version of meta-data API, passing through directly")
+		logWithLabels(labels).Info("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
@@ -227,7 +227,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
 		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
-		log.Error(err)
+		logWithLabels(labels).Error(err)
 		http.NotFound(w, r)
 		return
 	}
@@ -260,6 +260,17 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "request_path", Value: r.URL.String()},
 		metrics.Label{Name: "handler_name", Value: "passthrough"},
+	}
+
+	// read the role from AWS
+	_, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
+	if err != nil {
+		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
+		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+
+		httpError(err, w, r)
+		return
 	}
 
 	r.RequestURI = ""

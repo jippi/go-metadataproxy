@@ -49,22 +49,22 @@ vet: fmt
 
 .PHONY: build
 build: install fmt vet
-	@echo "=> building backend ..."
+	@echo "=> building binaries ..."
 	$(MAKE) -j $(BINARIES)
 
 .PHONY: rebuild
 rebuild: clean
-	@echo "=> rebuilding backend ..."
+	@echo "=> rebuilding binaries ..."
 	$(MAKE) -j build
 
 .PHONY: clean
 clean:
-	@echo "=> cleaning backend ..."
+	@echo "=> cleaning binaries ..."
 	rm -rf $(BUILD_DIR)
 
 .PHONY: dist-clean
 dist-clean: clean
-	@echo "=> dist-cleaning backend ..."
+	@echo "=> cleaning vendor/ ..."
 	rm -rf vendor/
 
 .PHONY: test
