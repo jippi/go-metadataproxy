@@ -26,7 +26,7 @@ install:
 .PHONY: fmt
 fmt:
 	@echo "=> Running go fmt" ;
-	@if [ -n "`go fmt .`" ]; then \
+	@if [ -n "`go fmt . internal/...`" ]; then \
 		echo "[ERR] go fmt updated formatting. Please commit formatted code first."; \
 		exit 1; \
 	fi
