@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	awsTimeLayoutResponse = "2006-01-01T15:04:05Z"
+	awsTimeLayoutResponse = "2006-02-01T15:04:05Z"
 )
 
 var (
