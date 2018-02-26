@@ -35,7 +35,7 @@ func StarServer() {
 
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info", iamInfoHandler))
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName))
+		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials", iamSecurityCredentialsName))
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole))
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/{rest:.*}", passthroughHandler))
 		r.HandleFunc(newrelic.WrapHandleFunc(app, "/metrics", metricsHandler))
@@ -45,7 +45,7 @@ func StarServer() {
 	} else {
 		r.HandleFunc("/{api_version}/meta-data/iam/info", iamInfoHandler)
 		r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName)
+		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials", iamSecurityCredentialsName)
 		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole)
 		r.HandleFunc("/{api_version}/{rest:.*}", passthroughHandler)
 		r.HandleFunc("/metrics", metricsHandler)
