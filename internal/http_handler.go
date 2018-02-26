@@ -216,7 +216,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "role_names_do_not_match"})
 		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
-		httpError(fmt.Errorf("Role names do not match"), w, r)
+		httpError(fmt.Errorf("Role names do not match (requested: '%s' vs container role: '%s')", vars["requested_role"], *roleInfo.RoleName), w, r)
 		return
 	}
 
