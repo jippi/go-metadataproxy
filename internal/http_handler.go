@@ -266,16 +266,9 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 		metrics.Label{Name: "handler_name", Value: "passthrough"},
 	}
 
-	// read the role from AWS
-	_, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
-	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
-
-		httpError(err, w, r)
-		return
-	}
+	// try to enrich the telemetry with additional labels
+	// if this fail, we will still proxy the request as-is
+	_, labels, _ = findContainerRoleByAddress(r.RemoteAddr, labels)
 
 	r.RequestURI = ""
 
