@@ -94,8 +94,9 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "request_path", Value: "/meta-data/iam/info"},
 		metrics.Label{Name: "handler_name", Value: "iam-info-handler"},
+		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "request_path", Value: "/meta-data/iam/info"},
 	}
 
 	// ensure we got compatible api version
@@ -152,8 +153,9 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/"},
 		metrics.Label{Name: "handler_name", Value: "iam-security-credentials-name"},
+		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/"},
 	}
 
 	// ensure we got compatible api version
@@ -191,9 +193,10 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "handler_name", Value: "iam-security-crentials-for-role"},
+		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/{requested_role}"},
 		metrics.Label{Name: "requested_role", Value: vars["requested_role"]},
-		metrics.Label{Name: "handler_name", Value: "iam-security-crentials-for-role"},
 	}
 
 	// ensure we got compatible api version
@@ -262,8 +265,9 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "request_path", Value: r.URL.String()},
 		metrics.Label{Name: "handler_name", Value: "passthrough"},
+		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "request_path", Value: r.URL.String()},
 	}
 
 	// try to enrich the telemetry with additional labels
@@ -311,8 +315,9 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, []metrics.Label{
-		metrics.Label{Name: "request_path", Value: "/metrics"},
 		metrics.Label{Name: "handler_name", Value: "metrics"},
+		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "request_path", Value: "/metrics"},
 	})
 
 	if os.Getenv("ENABLE_PROMETHEUS") != "" {

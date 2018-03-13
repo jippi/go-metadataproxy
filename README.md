@@ -76,6 +76,7 @@ Labels will be emitted as tags for backends using that.
   - `passthrough` will be used for all other requests
 - `role_name` will be included if go-metadataproxy found a IAM role during the request
 - `request_path` is the full URL path for the request
+- `remote_addr` is the remote address requesting the metadata api (typically the container IP)
 - `response_code` is the response code to the client connecting to go-metadataproxy. All failures result in a `404` code, otherwise `200`
   - `error_description` If the `response_code` is `404`, this label will contain a description of why - otherwise omitted
 - `service` Always set to `go-metadataproxy`
