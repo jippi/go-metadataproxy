@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	metrics "github.com/armon/go-metrics"
 	"github.com/fsouza/go-dockerclient"
-	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +15,6 @@ var (
 	defaultRole      = os.Getenv("DEFAULT_ROLE")
 	copyDockerLabels = strings.Split(os.Getenv("COPY_DOCKER_LABELS"), ",")
 	copyDockerEnvs   = strings.Split(os.Getenv("COPY_DOCKER_ENV"), ",")
-	containerCache   = cache.New(5*time.Minute, 1*time.Minute)
 )
 
 // ConfigureDocker will setup a docker client used during normal operations
@@ -41,29 +38,20 @@ func ConfigureDocker() {
 func findDockerContainer(ip string, labels []metrics.Label) (*docker.Container, []metrics.Label, error) {
 	var container *docker.Container
 
-	cachedContainer, ok := containerCache.Get(ip)
-	if !ok {
-		logWithLabels(labels).Infof("Looking up container info for %s in docker", ip)
+	logWithLabels(labels).Infof("Looking up container info for %s in docker", ip)
+	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
+		Filters: map[string][]string{
+			"status": []string{"running"},
+		},
+	})
 
-		containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
-			Filters: map[string][]string{
-				"status": []string{"running"},
-			},
-		})
+	if err != nil {
+		return nil, labels, err
+	}
 
-		if err != nil {
-			return nil, labels, err
-		}
-
-		container, err = findContainerByIP(ip, labels, containers)
-		if err != nil {
-			return nil, labels, err
-		}
-
-		containerCache.Set(ip, container, cache.DefaultExpiration)
-	} else {
-		logWithLabels(labels).Infof("Found container info for '%s' in cache", ip)
-		container = cachedContainer.(*docker.Container)
+	container, err = findContainerByIP(ip, labels, containers)
+	if err != nil {
+		return nil, labels, err
 	}
 
 	if len(copyDockerLabels) > 0 {
