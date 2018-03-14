@@ -45,6 +45,7 @@ func isCompatibleAPIVersion(r *http.Request) bool {
 
 func httpError(err error, w http.ResponseWriter, r *http.Request) {
 	log.Error(err)
+	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	http.NotFound(w, r)
 }
 

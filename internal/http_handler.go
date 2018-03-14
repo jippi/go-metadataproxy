@@ -82,7 +82,6 @@ func StarServer() {
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 // handles: /{api_version}/meta-data/iam/info
@@ -178,6 +177,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 
 	// send the response
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(*roleInfo.RoleName))
 
@@ -302,7 +302,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	w.Header().Add("X-Powered-By", "go-metadataproxy")
+	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 
