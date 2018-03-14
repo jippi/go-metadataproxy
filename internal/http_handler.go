@@ -88,8 +88,6 @@ func StarServer() {
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
 func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
-	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
-
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
@@ -98,6 +96,8 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/info"},
 	}
+
+	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
@@ -147,16 +147,16 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
 func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
-	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
-
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "iam-security-credentials-name"},
-		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/"},
 	}
+
+	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
@@ -187,17 +187,16 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
 func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
-	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
-
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "iam-security-crentials-for-role"},
-		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/{requested_role}"},
 		metrics.Label{Name: "requested_role", Value: vars["requested_role"]},
 	}
+	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
@@ -259,16 +258,15 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
-	log.Infof("Handling %s from %s", r.URL.String(), r.RemoteAddr)
-
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
 		metrics.Label{Name: "api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "passthrough"},
-		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: r.URL.String()},
 	}
+	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// try to enrich the telemetry with additional labels
 	// if this fail, we will still proxy the request as-is
@@ -316,7 +314,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, []metrics.Label{
 		metrics.Label{Name: "handler_name", Value: "metrics"},
-		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
+		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: "/metrics"},
 	})
 
