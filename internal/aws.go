@@ -94,7 +94,7 @@ func assumeRoleFromAWS(arn string, labels []metrics.Label) (*sts.AssumeRoleOutpu
 	if assumedRole, ok := permissionCache.Get(arn); ok {
 		labels = append(labels, metrics.Label{Name: "assume_role_from_aws_cache", Value: "hit"})
 
-		log.Infof("Found STS Assume Role %s in cache", arn)
+		logWithLabels(labels).Infof("Found STS Assume Role %s in cache", arn)
 		return assumedRole.(*sts.AssumeRoleOutput), labels, nil
 	}
 	labels = append(labels, metrics.Label{Name: "assume_role_from_aws_cache", Value: "miss"})
