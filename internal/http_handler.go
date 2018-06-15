@@ -90,7 +90,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
-		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "iam-info-handler"},
 		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/info"},
@@ -149,7 +149,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
-		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "iam-security-credentials-name"},
 		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/"},
@@ -190,7 +190,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
-		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "iam-security-crentials-for-role"},
 		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/{requested_role}"},
@@ -261,7 +261,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	// setup basic telemetry
 	vars := mux.Vars(r)
 	labels := []metrics.Label{
-		metrics.Label{Name: "api_version", Value: vars["api_version"]},
+		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
 		metrics.Label{Name: "handler_name", Value: "passthrough"},
 		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
 		metrics.Label{Name: "request_path", Value: r.URL.String()},
