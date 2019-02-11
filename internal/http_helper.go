@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	retryCount = 3
+	retryCount = 5
 	retrySleep = 5 * time.Millisecond
 )
 
