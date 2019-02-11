@@ -55,7 +55,7 @@ func findDockerContainer(ip string, labels []metrics.Label) (*docker.Container, 
 	if len(copyDockerLabels) > 0 {
 		for _, label := range copyDockerLabels {
 			if v, ok := container.Config.Labels[label]; ok {
-				labels = append(labels, metrics.Label{Name: strings.ToLower(label), Value: v})
+				labels = append(labels, metrics.Label{Name: labelName("container", label), Value: v})
 			}
 		}
 	}
@@ -63,7 +63,7 @@ func findDockerContainer(ip string, labels []metrics.Label) (*docker.Container, 
 	if len(copyDockerEnvs) > 0 {
 		for _, label := range copyDockerEnvs {
 			if v, ok := findDockerContainerEnvValue(container, label); ok {
-				labels = append(labels, metrics.Label{Name: strings.ToLower(label), Value: v})
+				labels = append(labels, metrics.Label{Name: labelName("container", label), Value: v})
 			}
 		}
 	}
@@ -113,4 +113,8 @@ func findDockerContainerEnvValue(container *docker.Container, key string) (strin
 	}
 
 	return "", false
+}
+
+func labelName(prefix, label string) string {
+	return fmt.Sprintf("%s_%s", prefix, strings.ToLower(label))
 }
