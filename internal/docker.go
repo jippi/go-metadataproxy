@@ -39,10 +39,7 @@ func findDockerContainer(ip string, labels []metrics.Label) (*docker.Container, 
 	var container *docker.Container
 
 	logWithLabels(labels).Infof("Looking up container info for %s in docker", ip)
-	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
-		All: true,
-	})
-
+	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
 		return nil, labels, err
 	}

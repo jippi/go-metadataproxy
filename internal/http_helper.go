@@ -9,8 +9,14 @@ import (
 
 	metrics "github.com/armon/go-metrics"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	retryCount = 3
+	retrySleep = 5 * time.Millisecond
 )
 
 func remoteIP(addr string) string {
@@ -18,9 +24,25 @@ func remoteIP(addr string) string {
 }
 
 func findContainerRoleByAddress(addr string, labels []metrics.Label) (*iam.Role, []metrics.Label, error) {
-	remoteIP := remoteIP(addr)
+	var container *docker.Container
 
-	container, labels, err := findDockerContainer(remoteIP, labels)
+	// retry finding the Docker container since sometimes Docker doesn't actually list the container until its been
+	// running for a while. This is a really simple and basic retry policy
+	var err error
+	remoteIP := remoteIP(addr)
+	for i := 1; i <= retryCount; i++ {
+		container, labels, err = findDockerContainer(remoteIP, labels)
+		// if we got no errors, just break the loop and keep moving forward
+		if err == nil {
+			break
+		}
+
+		// if we got an error, log that and take a quick nap
+		logWithLabels(labels).Errorf("Could not find Docker container with remote IP %s (retry %d out of %d)", remoteIP, i, retryCount)
+		time.Sleep(retrySleep)
+	}
+
+	// check if we got no errors from the "findDockerContainer" innerloop above
 	if err != nil {
 		return nil, labels, err
 	}
