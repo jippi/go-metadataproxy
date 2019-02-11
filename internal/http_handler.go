@@ -124,7 +124,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
 		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
-		metrics.IncrCounterWithLabels([]string{}, 1, labels)
+		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
 
 		httpError(err, w, r)
 		return
