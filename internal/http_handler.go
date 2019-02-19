@@ -7,16 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/armon/go-metrics"
 	"github.com/gorilla/mux"
 	"github.com/newrelic/go-agent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	telemetryPrefix = "metadataproxy"
 )
 
 // StarServer will start the HTTP server (blocking)
@@ -87,46 +82,54 @@ func StarServer() {
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
 func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
+	request := NewRequest()
+
 	// setup basic telemetry
 	vars := mux.Vars(r)
-	labels := []metrics.Label{
-		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "handler_name", Value: "iam-info-handler"},
-		metrics.Label{Name: "remote_addr", Value: r.RemoteAddr},
-		metrics.Label{Name: "request_path", Value: "/meta-data/iam/info"},
-	}
+	request.setLabels(map[string]string{
+		"aws_api_version": vars["api_version"],
+		"handler_name":    "iam-info-handler",
+		"remote_addr":     r.RemoteAddr,
+		"request_path":    "/meta-data/iam/info",
+	})
+	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
-	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+	// publish specific go-metadataproxy headers
+	request.setResponseHeaders(w)
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		logWithLabels(labels).Info("Request is using too old version of meta-data API, passing through directly")
+		request.log.Info("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
 
 	// read the role from AWS
-	roleInfo, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
+	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "could_not_find_container",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
 
-		httpError(err, w, r)
+		httpError(err, w, r, request)
 		return
 	}
 
 	// append role name to future telemetry
-	labels = append(labels, metrics.Label{Name: "role_name", Value: *roleInfo.RoleName})
+	request.setLabel("role_name", *roleInfo.RoleName)
 
 	// assume the role
-	assumeRole, labels, err := assumeRoleFromAWS(*roleInfo.Arn, labels)
+	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, request)
 	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "could_not_assume_role",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
 
-		httpError(err, w, r)
+		httpError(err, w, r, request)
 		return
 	}
 
@@ -140,100 +143,115 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	sendJSONResponse(w, response)
 
-	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
-	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+	request.setLabel("response_code", "200")
+	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
 func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	// setup basic telemetry
 	vars := mux.Vars(r)
-	labels := []metrics.Label{
-		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "handler_name", Value: "iam-security-credentials-name"},
-		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
-		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/"},
-	}
 
-	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+	request := NewRequest()
+	request.setLabels(map[string]string{
+		"aws_api_version": vars["api_version"],
+		"handler_name":    "iam-security-credentials-name",
+		"remote_addr":     remoteIP(r.RemoteAddr),
+		"request_path":    "/meta-data/iam/security-credentials/",
+	})
+	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+
+	// publish specific go-metadataproxy headers
+	request.setResponseHeaders(w)
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		logWithLabels(labels).Info("Request is using too old version of meta-data API, passing through directly")
+		request.log.Info("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
 
 	// read the role from AWS
-	roleInfo, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
+	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "could_not_find_container",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
 
-		httpError(err, w, r)
+		httpError(err, w, r, request)
 		return
 	}
 
 	// send the response
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(*roleInfo.RoleName))
 
-	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
-	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+	request.setLabel("response_code", "200")
+	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
 func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
-	// setup basic telemetry
 	vars := mux.Vars(r)
-	labels := []metrics.Label{
-		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "handler_name", Value: "iam-security-crentials-for-role"},
-		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
-		metrics.Label{Name: "request_path", Value: "/meta-data/iam/security-credentials/{requested_role}"},
-		metrics.Label{Name: "requested_role", Value: vars["requested_role"]},
-	}
-	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+
+	request := NewRequest()
+	request.setLabels(map[string]string{
+		"aws_api_version": vars["api_version"],
+		"handler_name":    "iam-security-crentials-for-role",
+		"remote_addr":     remoteIP(r.RemoteAddr),
+		"request_path":    "/meta-data/iam/security-credentials/{requested_role}",
+		"requested_role":  vars["requested_role"],
+	})
+	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+
+	// publish specific go-metadataproxy headers
+	request.setResponseHeaders(w)
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		logWithLabels(labels).Info("Request is using too old version of meta-data API, passing through directly")
+		request.log.Info("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
 
 	// read the role from AWS
-	roleInfo, labels, err := findContainerRoleByAddress(r.RemoteAddr, labels)
+	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_find_container"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "could_not_find_container",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
 
-		httpError(err, w, r)
+		httpError(err, w, r, request)
 		return
 	}
 
 	// verify the requested role match the container role
 	if vars["requested_role"] != *roleInfo.RoleName {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "role_names_do_not_match"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "role_names_do_not_match",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
 
-		httpError(fmt.Errorf("Role names do not match (requested: '%s' vs container role: '%s')", vars["requested_role"], *roleInfo.RoleName), w, r)
+		httpError(fmt.Errorf("Role names do not match (requested: '%s' vs container role: '%s')", vars["requested_role"], *roleInfo.RoleName), w, r, request)
 		return
 	}
 
 	// assume the container role
-	assumeRole, labels, err := assumeRoleFromAWS(*roleInfo.Arn, labels)
+	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, request)
 	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "could_not_assume_role",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
+		request.log.Error(err)
 
-		logWithLabels(labels).Error(err)
 		http.NotFound(w, r)
 		return
 	}
@@ -252,25 +270,30 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	// send response
 	sendJSONResponse(w, response)
 
-	labels = append(labels, metrics.Label{Name: "response_code", Value: "200"})
-	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+	request.setLabel("response_code", "200")
+	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	// setup basic telemetry
 	vars := mux.Vars(r)
-	labels := []metrics.Label{
-		metrics.Label{Name: "aws_api_version", Value: vars["api_version"]},
-		metrics.Label{Name: "handler_name", Value: "passthrough"},
-		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
-		metrics.Label{Name: "request_path", Value: r.URL.String()},
-	}
-	logWithLabels(labels).Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+
+	request := NewRequest()
+	request.setLabels(map[string]string{
+		"aws_api_version": vars["api_version"],
+		"handler_name":    "passthrough",
+		"remote_addr":     remoteIP(r.RemoteAddr),
+		"request_path":    r.URL.String(),
+	})
+	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+
+	// publish specific go-metadataproxy headers
+	request.setResponseHeaders(w)
 
 	// try to enrich the telemetry with additional labels
 	// if this fail, we will still proxy the request as-is
-	_, labels, _ = findContainerRoleByAddress(r.RemoteAddr, labels)
+	findContainerRoleByAddress(r.RemoteAddr, request)
 
 	r.RequestURI = ""
 
@@ -285,19 +308,21 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	tp := newTransport()
 	client := &http.Client{Transport: tp}
 	defer func() {
-		metrics.SetGaugeWithLabels([]string{telemetryPrefix, "aws_response_time"}, float32(tp.Duration()), labels)
-		metrics.SetGaugeWithLabels([]string{telemetryPrefix, "aws_request_time"}, float32(tp.ReqDuration()), labels)
-		metrics.SetGaugeWithLabels([]string{telemetryPrefix, "aws_connection_time"}, float32(tp.ConnDuration()), labels)
+		request.setGaugeWithLabels([]string{"aws_response_time"}, float32(tp.Duration()))
+		request.setGaugeWithLabels([]string{"aws_request_time"}, float32(tp.ReqDuration()))
+		request.setGaugeWithLabels([]string{"aws_connection_time"}, float32(tp.ConnDuration()))
 	}()
 
 	// use the incoming http request to construct upstream request
 	resp, err := client.Do(r)
 	if err != nil {
-		labels = append(labels, metrics.Label{Name: "response_code", Value: "404"})
-		labels = append(labels, metrics.Label{Name: "error_description", Value: "could_not_assume_role"})
-		metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+		request.setLabels(map[string]string{
+			"response_code":     "404",
+			"error_description": "could_not_assume_role",
+		})
+		request.incrCounterWithLabels([]string{"http_request"}, 1)
 
-		httpError(fmt.Errorf("Could not proxy request: %s", err), w, r)
+		httpError(fmt.Errorf("Could not proxy request: %s", err), w, r, request)
 		return
 	}
 	defer resp.Body.Close()
@@ -306,17 +331,22 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 
-	labels = append(labels, metrics.Label{Name: "response_code", Value: fmt.Sprintf("%v", resp.StatusCode)})
-	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, labels)
+	request.setLabel("response_code", fmt.Sprintf("%v", resp.StatusCode))
+	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
-	metrics.IncrCounterWithLabels([]string{telemetryPrefix, "http_request"}, 1, []metrics.Label{
-		metrics.Label{Name: "handler_name", Value: "metrics"},
-		metrics.Label{Name: "remote_addr", Value: remoteIP(r.RemoteAddr)},
-		metrics.Label{Name: "request_path", Value: "/metrics"},
+	request := NewRequest()
+	request.setLabels(map[string]string{
+		"handler_name": "metrics",
+		"remote_addr":  remoteIP(r.RemoteAddr),
+		"request_path": "/metrics",
 	})
+	request.incrCounterWithLabels([]string{"http_request"}, 1)
+
+	// publish specific go-metadataproxy headers
+	request.setResponseHeaders(w)
 
 	if os.Getenv("ENABLE_PROMETHEUS") != "" {
 		handlerOptions := promhttp.HandlerOpts{
@@ -332,7 +362,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := telemetry.DisplayMetrics(w, r)
 	if err != nil {
-		log.Error(err)
+		request.log.Error(err)
 		return
 	}
 

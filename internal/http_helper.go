@@ -7,11 +7,9 @@ import (
 	"strings"
 	"time"
 
-	metrics "github.com/armon/go-metrics"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -23,7 +21,7 @@ func remoteIP(addr string) string {
 	return strings.Split(addr, ":")[0]
 }
 
-func findContainerRoleByAddress(addr string, labels []metrics.Label) (*iam.Role, []metrics.Label, error) {
+func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, error) {
 	var container *docker.Container
 
 	// retry finding the Docker container since sometimes Docker doesn't actually list the container until its been
@@ -31,33 +29,33 @@ func findContainerRoleByAddress(addr string, labels []metrics.Label) (*iam.Role,
 	var err error
 	remoteIP := remoteIP(addr)
 	for i := 1; i <= retryCount; i++ {
-		container, labels, err = findDockerContainer(remoteIP, labels)
+		container, err = findDockerContainer(remoteIP, request)
 		// if we got no errors, just break the loop and keep moving forward
 		if err == nil {
 			break
 		}
 
 		// if we got an error, log that and take a quick nap
-		logWithLabels(labels).Errorf("Could not find Docker container with remote IP %s (retry %d out of %d)", remoteIP, i, retryCount)
+		request.log.Errorf("Could not find Docker container with remote IP %s (retry %d out of %d)", remoteIP, i, retryCount)
 		time.Sleep(retrySleep)
 	}
 
 	// check if we got no errors from the "findDockerContainer" innerloop above
 	if err != nil {
-		return nil, labels, err
+		return nil, err
 	}
 
-	roleName, err := findDockerContainerIAMRole(container)
+	roleName, err := findDockerContainerIAMRole(container, request)
 	if err != nil {
-		return nil, labels, err
+		return nil, err
 	}
 
-	role, labels, err := readRoleFromAWS(roleName, labels)
+	role, err := readRoleFromAWS(roleName, request)
 	if err != nil {
-		return nil, labels, err
+		return nil, err
 	}
 
-	return role, labels, nil
+	return role, nil
 }
 
 func isCompatibleAPIVersion(r *http.Request) bool {
@@ -65,8 +63,8 @@ func isCompatibleAPIVersion(r *http.Request) bool {
 	return vars["api_version"] >= "2012-01-12"
 }
 
-func httpError(err error, w http.ResponseWriter, r *http.Request) {
-	log.Error(err)
+func httpError(err error, w http.ResponseWriter, r *http.Request, request *Request) {
+	request.log.Error(err)
 	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	http.NotFound(w, r)
 }

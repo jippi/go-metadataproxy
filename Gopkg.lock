@@ -344,6 +344,14 @@
   revision = "1dc9a6cbc91aacc3e8b2d63db4d2e957a5394ac4"
 
 [[projects]]
+  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:58f7b701c6c24c34e4800ea8148258e8967b934a4c05da1fb34c5dffb1e34f81"
   name = "github.com/seatgeek/logrus-gelf-formatter"
@@ -396,6 +404,7 @@
     "github.com/patrickmn/go-cache",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/satori/go.uuid",
     "github.com/seatgeek/logrus-gelf-formatter",
     "github.com/sirupsen/logrus",
   ]

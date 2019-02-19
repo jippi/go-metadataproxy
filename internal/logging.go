@@ -3,7 +3,6 @@ package internal
 import (
 	"os"
 
-	"github.com/armon/go-metrics"
 	gelf "github.com/seatgeek/logrus-gelf-formatter"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,14 +29,4 @@ func ConfigureLogging() {
 			log.Fatal("Unknown log_format (text, json or gelf)")
 		}
 	}
-}
-
-func logWithLabels(labels []metrics.Label) *log.Entry {
-	fields := log.Fields{}
-
-	for _, label := range labels {
-		fields[label.Name] = label.Value
-	}
-
-	return log.WithFields(fields)
 }
