@@ -23,8 +23,10 @@ func NewRequest() *Request {
 	id := uuid.NewV4()
 
 	return &Request{
-		id:  id.String(),
-		log: logrus.WithField("request_id", id.String()),
+		id:            id.String(),
+		log:           logrus.WithField("request_id", id.String()),
+		metricsLabels: make([]metrics.Label, 0),
+		loggingLabels: logrus.Fields{},
 	}
 }
 
