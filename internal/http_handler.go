@@ -327,7 +327,6 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 
@@ -338,6 +337,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest()
+
 	request.setLabels(map[string]string{
 		"handler_name": "metrics",
 		"remote_addr":  remoteIP(r.RemoteAddr),

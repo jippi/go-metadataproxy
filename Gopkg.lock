@@ -86,6 +86,14 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
+  digest = "1:166438587ed45ac211dab8a3ecebf4fa0c186d0db63430fb9127bbc2e5fcdc67"
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "1e4cf3da559842a91afcb6ea6141451e6c30c618"
+  version = "v2.1.1"
+
+[[projects]]
   branch = "master"
   digest = "1:e48c63e818c67fbf3d7afe20bba33134ab1a5bf384847385384fd027652a5a96"
   name = "github.com/containerd/continuity"
@@ -397,6 +405,7 @@
     "github.com/aws/aws-sdk-go-v2/aws/external",
     "github.com/aws/aws-sdk-go-v2/service/iam",
     "github.com/aws/aws-sdk-go-v2/service/sts",
+    "github.com/cenkalti/backoff",
     "github.com/davecgh/go-spew/spew",
     "github.com/fsouza/go-dockerclient",
     "github.com/gorilla/mux",

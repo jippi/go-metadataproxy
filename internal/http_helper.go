@@ -8,13 +8,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/cenkalti/backoff"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
-)
-
-const (
-	retryCount = 5
-	retrySleep = 5 * time.Millisecond
 )
 
 func remoteIP(addr string) string {
@@ -26,21 +22,22 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, error
 
 	// retry finding the Docker container since sometimes Docker doesn't actually list the container until its been
 	// running for a while. This is a really simple and basic retry policy
-	var err error
 	remoteIP := remoteIP(addr)
-	for i := 1; i <= retryCount; i++ {
-		container, err = findDockerContainer(remoteIP, request)
-		// if we got no errors, just break the loop and keep moving forward
-		if err == nil {
-			break
-		}
 
-		// if we got an error, log that and take a quick nap
-		request.log.Errorf("Could not find Docker container with remote IP %s (retry %d out of %d)", remoteIP, i, retryCount)
-		time.Sleep(retrySleep)
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 5 * time.Second
+
+	retryable := func() error {
+		var err error
+		container, err = findDockerContainer(remoteIP, request)
+		return err
 	}
 
-	// check if we got no errors from the "findDockerContainer" innerloop above
+	notify := func(err error, t time.Duration) {
+		request.log.Errorf("%s in %d", err, t)
+	}
+
+	err := backoff.RetryNotify(retryable, b, notify)
 	if err != nil {
 		return nil, err
 	}
@@ -65,12 +62,10 @@ func isCompatibleAPIVersion(r *http.Request) bool {
 
 func httpError(err error, w http.ResponseWriter, r *http.Request, request *Request) {
 	request.log.Error(err)
-	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	http.NotFound(w, r)
 }
 
 func sendJSONResponse(w http.ResponseWriter, response interface{}) {
-	w.Header().Add("X-Powered-By", "go-metadataproxy")
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
