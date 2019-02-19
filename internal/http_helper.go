@@ -26,6 +26,7 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, error
 
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 5 * time.Second
+	b.InitialInterval = 5 * time.Millisecond
 
 	retryable := func() error {
 		var err error
