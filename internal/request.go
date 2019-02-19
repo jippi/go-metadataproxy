@@ -55,3 +55,16 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Powered-By", "go-metadataproxy")
 	w.Header().Set("X-Request-ID", r.id)
 }
+
+func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
+	if len(copyRequestHeaders) == 0 {
+		return
+	}
+
+	labels := make(map[string]string)
+	for _, label := range copyRequestHeaders {
+		if v := httpRequest.Header.Get("label"); v != "" {
+			labels[labelName("header", label)] = v
+		}
+	}
+}

@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	dockerClient     *docker.Client
-	defaultRole      = os.Getenv("DEFAULT_ROLE")
-	copyDockerLabels = strings.Split(os.Getenv("COPY_DOCKER_LABELS"), ",")
-	copyDockerEnvs   = strings.Split(os.Getenv("COPY_DOCKER_ENV"), ",")
+	dockerClient       *docker.Client
+	defaultRole        = os.Getenv("DEFAULT_ROLE")
+	copyDockerLabels   = strings.Split(os.Getenv("COPY_DOCKER_LABELS"), ",")
+	copyDockerEnvs     = strings.Split(os.Getenv("COPY_DOCKER_ENV"), ",")
+	copyRequestHeaders = strings.Split(os.Getenv("COPY_REQUEST_HEADERS"), ",")
 )
 
 // ConfigureDocker will setup a docker client used during normal operations

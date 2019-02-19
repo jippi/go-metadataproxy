@@ -82,10 +82,10 @@ func StarServer() {
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
 func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
-	request := NewRequest()
-
-	// setup basic telemetry
 	vars := mux.Vars(r)
+
+	request := NewRequest()
+	request.setLabelsFromRequestHeader(r)
 	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "iam-info-handler",
@@ -153,6 +153,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	request := NewRequest()
+	request.setLabelsFromRequestHeader(r)
 	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "iam-security-credentials-name",
@@ -198,6 +199,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	request := NewRequest()
+	request.setLabelsFromRequestHeader(r)
 	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "iam-security-crentials-for-role",
@@ -276,10 +278,10 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
-	// setup basic telemetry
 	vars := mux.Vars(r)
 
 	request := NewRequest()
+	request.setLabelsFromRequestHeader(r)
 	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "passthrough",
@@ -337,7 +339,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest()
-
+	request.setLabelsFromRequestHeader(r)
 	request.setLabels(map[string]string{
 		"handler_name": "metrics",
 		"remote_addr":  remoteIP(r.RemoteAddr),
