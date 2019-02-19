@@ -65,3 +65,7 @@ required = ["github.com/davecgh/go-spew/spew"]
 [[override]]
   name = "github.com/docker/libnetwork"
   revision = "1f28166bb386cf9223d2d00a28382b0e474be314"
+
+[[constraint]]
+  name = "github.com/cenkalti/backoff"
+  version = "2.1.1"
