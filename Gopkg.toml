@@ -32,7 +32,7 @@ required = ["github.com/davecgh/go-spew/spew"]
 
 [[constraint]]
   name = "github.com/gorilla/mux"
-  version = "1.6.1"
+  version = "1.7.3"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
