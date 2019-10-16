@@ -231,7 +231,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:15626e45ac500404df608542651a74c9a5f92459de509d4ff28c6d4510cb4225"
+  digest = "1:17faa53bb49b738a093c795cba8fe0acfd3499d01b3b01f70812d44c3f1c3d32"
   name = "github.com/newrelic/go-agent"
   packages = [
     ".",
@@ -243,8 +243,8 @@
     "internal/utilization",
   ]
   pruneopts = "UT"
-  revision = "06b39c8584cdc508480a21a36880f96e5a31468c"
-  version = "v2.13.0"
+  revision = "eb88332cb10616b59bb8e4ea2234e2d80e156b24"
+  version = "v2.14.1"
 
 [[projects]]
   digest = "1:ee4d4af67d93cc7644157882329023ce9a7bcfce956a079069a9405521c7cc8d"
