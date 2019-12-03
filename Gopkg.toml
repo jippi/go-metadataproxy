@@ -56,7 +56,7 @@ required = ["github.com/davecgh/go-spew/spew"]
 
 [[constraint]]
   name = "github.com/newrelic/go-agent"
-  version = "2.16.0"
+  version = "2.16.1"
 
 [[constraint]]
   branch = "master"
