@@ -49,7 +49,7 @@
   revision = "13f9d8e9b41c66738153b7582f1f62add8e407c8"
 
 [[projects]]
-  digest = "1:d7f7bd0c29a429f032c7e2baafb956acae698a83898018ec11efee3ed72c1504"
+  digest = "1:c6b40c522f12bc6297f8c290cf31487b80d03f700db895adcae692b7d2c8e7ed"
   name = "github.com/aws/aws-sdk-go-v2"
   packages = [
     "aws",
@@ -74,8 +74,8 @@
     "service/sts",
   ]
   pruneopts = "UT"
-  revision = "0143dbcf72cf30047f4830d714f7511e74d44034"
-  version = "v0.6.0"
+  revision = "b0e297c21991cec8a5d645714ea400caa790cb43"
+  version = "v0.18.0"
 
 [[projects]]
   branch = "master"
@@ -207,11 +207,11 @@
   version = "v0.5.0"
 
 [[projects]]
-  digest = "1:e22af8c7518e1eab6f2eab2b7d7558927f816262586cd6ed9f349c97a6c285c4"
+  digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0b12d6b5"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
@@ -363,6 +363,19 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:8b0cbc3c499fd0c6b85289a3f2073eb448aec6984934be19353d6d5a017fac07"
+  name = "golang.org/x/net"
+  packages = [
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+  ]
+  pruneopts = "UT"
+  revision = "c0dbc17a35534bf2e581d7a942408dc936316da4"
+
+[[projects]]
+  branch = "master"
   digest = "1:b16098ed46629e6d6f66d37153a36b6f664c522a9228f12a5a36f3d9b8a93713"
   name = "golang.org/x/sys"
   packages = [
@@ -371,6 +384,31 @@
   ]
   pruneopts = "UT"
   revision = "ad97f365e15054527b467150f898ec66d7f81e14"
+
+[[projects]]
+  digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
+  name = "golang.org/x/text"
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/language",
+    "internal/language/compact",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable",
+  ]
+  pruneopts = "UT"
+  revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
+  version = "v0.3.2"
 
 [solve-meta]
   analyzer-name = "dep"
