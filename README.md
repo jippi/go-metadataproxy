@@ -1,4 +1,6 @@
 # go-metadataproxy
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjippi%2Fgo-metadataproxy.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjippi%2Fgo-metadataproxy?ref=badge_shield)
+
 
 The go-metadataproxy is used to allow containers to acquire IAM roles. By metadata we mean [EC2 instance meta data](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) which is normally available to EC2 instances. This proxy exposes the meta data to containers inside or outside of EC2 hosts, allowing you to provide scoped IAM roles to individual containers, rather than giving them the full IAM permissions of an IAM role or IAM user.
 
@@ -262,3 +264,7 @@ easily reproduce your bug.
 ### Submit pull requests
 
 Our only method of accepting code changes is through github pull requests.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjippi%2Fgo-metadataproxy.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjippi%2Fgo-metadataproxy?ref=badge_large)
