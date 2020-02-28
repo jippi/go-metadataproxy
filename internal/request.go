@@ -33,12 +33,12 @@ func NewRequest() *Request {
 }
 
 func (r *Request) setLabel(key, value string) {
-	r.setLabels(map[string]string{key: value})
+	r.setLabels(map[string]interface{}{key: value})
 }
 
-func (r *Request) setLabels(pairs map[string]string) {
+func (r *Request) setLabels(pairs map[string]interface{}) {
 	for key, value := range pairs {
-		r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: value})
+		r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: fmt.Sprintf("%s", value)})
 		r.loggingLabels[key] = value
 	}
 
@@ -61,7 +61,7 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 }
 
 func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
-	labels := make(map[string]string)
+	labels := make(map[string]interface{})
 
 	if isDataDogEnabled() {
 		span, found := tracer.SpanFromContext(httpRequest.Context())

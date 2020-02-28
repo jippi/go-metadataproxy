@@ -49,7 +49,7 @@ func findDockerContainer(ip string, request *Request) (*docker.Container, error)
 		return nil, err
 	}
 
-	additionalLabels := make(map[string]string)
+	additionalLabels := make(map[string]interface{})
 	if len(copyDockerLabels) > 0 {
 		for _, label := range copyDockerLabels {
 			if v, ok := container.Config.Labels[label]; ok {
