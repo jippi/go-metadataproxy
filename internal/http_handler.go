@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 // StarServer will start the HTTP server (blocking)
@@ -59,6 +60,9 @@ func getRouter() http.Handler {
 	// Enable DataDog APM
 	if datadogServiceName := os.Getenv("DATADOG_SERVICE_NAME"); datadogServiceName != "" {
 		r := muxtrace.NewRouter(muxtrace.WithServiceName(datadogServiceName))
+		tracer.Start(tracer.WithAnalytics(true))
+		// we don't call "defer tracer.Stop()" here since stopping the server will always stop the full process
+		// and it would be annoying to hoist this into the right place to use defer
 		return configureRouter(r)
 	}
 
