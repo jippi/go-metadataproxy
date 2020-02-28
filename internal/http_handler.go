@@ -47,6 +47,7 @@ func StarServer() {
 func getRouter() http.Handler {
 	// Enable NewRelic APM
 	if newrelicAppName := os.Getenv("NEWRELIC_APP_NAME"); newrelicAppName != "" {
+		log.Infof("Creating NewRelic router")
 		r := mux.NewRouter()
 		app, err := newrelic.NewApplication(newrelic.ConfigFromEnvironment())
 		if err != nil {
@@ -59,6 +60,7 @@ func getRouter() http.Handler {
 
 	// Enable DataDog APM
 	if datadogServiceName := os.Getenv("DATADOG_SERVICE_NAME"); datadogServiceName != "" {
+		log.Infof("Creating DataDog router")
 		r := muxtrace.NewRouter(muxtrace.WithServiceName(datadogServiceName))
 		tracer.Start(tracer.WithAnalytics(true))
 		// we don't call "defer tracer.Stop()" here since stopping the server will always stop the full process
@@ -67,6 +69,7 @@ func getRouter() http.Handler {
 	}
 
 	// Default to vanilla router without APM
+	log.Infof("Creating HTTP router")
 	return configureRouter(mux.NewRouter())
 }
 
