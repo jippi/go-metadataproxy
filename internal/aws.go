@@ -18,8 +18,8 @@ const (
 )
 
 var (
-	iamService      *iam.IAM
-	stsService      *sts.STS
+	iamService      *iam.Client
+	stsService      *sts.Client
 	roleCache       = cache.New(1*time.Hour, 15*time.Minute)
 	permissionCache = cache.New(5*time.Minute, 10*time.Minute)
 )
@@ -73,7 +73,7 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 			RoleName: aws.String(role),
 		})
 
-		resp, err := req.Send()
+		resp, err := req.Send(req.Context())
 		if err != nil {
 			return nil, err
 		}
@@ -85,13 +85,13 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 	return roleObject, nil
 }
 
-func assumeRoleFromAWS(arn string, request *Request) (*sts.AssumeRoleOutput, error) {
+func assumeRoleFromAWS(arn string, request *Request) (*sts.AssumeRoleResponse, error) {
 	request.log.Infof("Looking for STS Assume Role for %s", arn)
 
 	if assumedRole, ok := permissionCache.Get(arn); ok {
 		request.setLabel("assume_role_from_aws_cache", "hit")
 		request.log.Infof("Found STS Assume Role %s in cache", arn)
-		return assumedRole.(*sts.AssumeRoleOutput), nil
+		return assumedRole.(*sts.AssumeRoleResponse), nil
 	}
 
 	request.setLabel("assume_role_from_aws_cache", "miss")
@@ -101,7 +101,7 @@ func assumeRoleFromAWS(arn string, request *Request) (*sts.AssumeRoleOutput, err
 		RoleSessionName: aws.String("go-metadataproxy"),
 	})
 
-	assumedRole, err := req.Send()
+	assumedRole, err := req.Send(req.Context())
 	if err != nil {
 		return nil, err
 	}

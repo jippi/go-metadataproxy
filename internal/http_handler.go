@@ -8,51 +8,16 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/newrelic/go-agent"
+	"github.com/newrelic/go-agent/v3/integrations/nrgorilla"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 )
 
 // StarServer will start the HTTP server (blocking)
 func StarServer() {
-	r := mux.NewRouter()
-
-	newrelicAppName := os.Getenv("NEWRELIC_APP_NAME")
-	newrelicLicense := os.Getenv("NEWRELIC_LICENSE")
-
-	if newrelicAppName != "" && newrelicLicense != "" {
-		config := newrelic.NewConfig(newrelicAppName, newrelicLicense)
-		app, err := newrelic.NewApplication(config)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info", iamInfoHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/{requested_role}/", iamSecurityCredentialsForRole))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials", iamSecurityCredentialsName))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{api_version}/{rest:.*}", passthroughHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/metrics", metricsHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/favicon.ico", notFoundHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/{rest:.*}", passthroughHandler))
-		r.HandleFunc(newrelic.WrapHandleFunc(app, "/", passthroughHandler))
-	} else {
-		r.HandleFunc("/{api_version}/meta-data/iam/info", iamInfoHandler)
-		r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}/", iamSecurityCredentialsForRole)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials", iamSecurityCredentialsName)
-		r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName)
-		r.HandleFunc("/{api_version}/{rest:.*}", passthroughHandler)
-		r.HandleFunc("/metrics", metricsHandler)
-		r.HandleFunc("/favicon.ico", notFoundHandler)
-		r.HandleFunc("/{rest:.*}", passthroughHandler)
-		r.HandleFunc("/", passthroughHandler)
-	}
-
 	host := os.Getenv("HOST")
 	if host == "" {
 		host = "0.0.0.0"
@@ -64,11 +29,10 @@ func StarServer() {
 	}
 
 	addr := fmt.Sprintf("%s:%s", host, port)
-
 	log.Infof("Starting server at %s", addr)
 
 	srv := &http.Server{
-		Handler:      r,
+		Handler:      getRouter(),
 		Addr:         addr,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
@@ -77,6 +41,49 @@ func StarServer() {
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getRouter() http.Handler {
+	// Enable NewRelic APM
+	if newrelicAppName := os.Getenv("NEWRELIC_APP_NAME"); newrelicAppName != "" {
+		r := mux.NewRouter()
+		app, err := newrelic.NewApplication(newrelic.ConfigFromEnvironment())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		r.Use(nrgorilla.Middleware(app))
+		return configureRouter(r)
+	}
+
+	// Enable DataDog APM
+	if datadogServiceName := os.Getenv("DATADOG_SERVICE_NAME"); datadogServiceName != "" {
+		r := muxtrace.NewRouter(muxtrace.WithServiceName(datadogServiceName))
+		return configureRouter(r)
+	}
+
+	// Default to vanilla router without APM
+	return configureRouter(mux.NewRouter())
+}
+
+type handlerFunc interface {
+	HandleFunc(path string, f func(http.ResponseWriter, *http.Request)) *mux.Route
+	ServeHTTP(http.ResponseWriter, *http.Request)
+}
+
+func configureRouter(r handlerFunc) http.Handler {
+	r.HandleFunc("/{api_version}/meta-data/iam/info", iamInfoHandler)
+	r.HandleFunc("/{api_version}/meta-data/iam/info/{junk}", iamInfoHandler)
+	r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}", iamSecurityCredentialsForRole)
+	r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/{requested_role}/", iamSecurityCredentialsForRole)
+	r.HandleFunc("/{api_version}/meta-data/iam/security-credentials", iamSecurityCredentialsName)
+	r.HandleFunc("/{api_version}/meta-data/iam/security-credentials/", iamSecurityCredentialsName)
+	r.HandleFunc("/{api_version}/{rest:.*}", passthroughHandler)
+	r.HandleFunc("/metrics", metricsHandler)
+	r.HandleFunc("/favicon.ico", notFoundHandler)
+	r.HandleFunc("/{rest:.*}", passthroughHandler)
+	r.HandleFunc("/", passthroughHandler)
+	return r
 }
 
 // handles: /{api_version}/meta-data/iam/info
