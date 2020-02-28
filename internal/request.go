@@ -38,7 +38,7 @@ func (r *Request) setLabel(key, value string) {
 
 func (r *Request) setLabels(pairs map[string]interface{}) {
 	for key, value := range pairs {
-		r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: fmt.Sprintf("%s", value)})
+		r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: fmt.Sprintf("%v", value)})
 		r.loggingLabels[key] = value
 	}
 
