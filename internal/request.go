@@ -68,8 +68,8 @@ func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
 		if !found {
 			r.log.Errorf("Could not find tracer from request")
 		} else {
-			labels["trace_id"] = fmt.Sprintf("%d", span.Context().TraceID())
-			labels["span_id"] = fmt.Sprintf("%d", span.Context().SpanID())
+			labels["dd.trace_id"] = fmt.Sprintf("%d", span.Context().TraceID())
+			labels["dd.span_id"] = fmt.Sprintf("%d", span.Context().SpanID())
 		}
 	}
 
