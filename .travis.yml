@@ -10,7 +10,6 @@ services:
 
 env:
   global:
-    - CGO_ENABLED=0
     - GOBUILD="linux-amd64 windows-amd64 darwin-amd64"
 
 script:
