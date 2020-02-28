@@ -64,12 +64,11 @@ func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
 	labels := make(map[string]interface{})
 
 	if isDataDogEnabled() {
-		span, found := tracer.SpanFromContext(httpRequest.Context())
-		if !found {
-			r.log.Errorf("Could not find tracer from request")
-		} else {
-			labels["dd.trace_id"] = fmt.Sprintf("%d", span.Context().TraceID())
-			labels["dd.span_id"] = fmt.Sprintf("%d", span.Context().SpanID())
+		if span, found := tracer.SpanFromContext(httpRequest.Context()); found {
+			r.log = r.log.WithFields(logrus.Fields{
+				"dd.trace_id": fmt.Sprintf("%d", span.Context().TraceID()),
+				"dd.span_id":  fmt.Sprintf("%d", span.Context().SpanID()),
+			})
 		}
 	}
 
