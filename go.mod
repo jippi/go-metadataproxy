@@ -12,7 +12,6 @@ require (
 	github.com/docker/docker v1.4.2-0.20191219165747-a9416c67da9f // indirect
 	github.com/fsouza/go-dockerclient v1.4.1
 	github.com/gorilla/mux v1.7.4
-	github.com/morikuni/aec v0.0.0-20170113033406-39771216ff4c // indirect
 	github.com/newrelic/go-agent/v3 v3.0.0
 	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
 	github.com/opentracing/opentracing-go v1.1.0 // indirect

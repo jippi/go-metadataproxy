@@ -1,11 +1,13 @@
 package internal
 
 import (
+	"fmt"
 	"net/http"
 
 	metrics "github.com/armon/go-metrics"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
@@ -59,14 +61,25 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 }
 
 func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
-	if len(copyRequestHeaders) == 0 {
-		return
-	}
-
 	labels := make(map[string]string)
-	for _, label := range copyRequestHeaders {
-		if v := httpRequest.Header.Get("label"); v != "" {
-			labels[labelName("header", label)] = v
+
+	if isDataDogEnabled() {
+		span, found := tracer.SpanFromContext(httpRequest.Context())
+		if !found {
+			r.log.Errorf("Could not find tracer from request")
+		} else {
+			labels["dd.trace_id"] = fmt.Sprintf("%d", span.Context().TraceID())
+			labels["dd.span_id"] = fmt.Sprintf("%d", span.Context().SpanID())
 		}
 	}
+
+	if len(copyRequestHeaders) >= 0 {
+		for _, label := range copyRequestHeaders {
+			if v := httpRequest.Header.Get("label"); v != "" {
+				labels[labelName("header", label)] = v
+			}
+		}
+	}
+
+	r.setLabels(labels)
 }
