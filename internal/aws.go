@@ -85,6 +85,23 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 	return roleObject, nil
 }
 
+func constructAssumeRoleInput(arn string, externalId string, sessionName string) (*sts.AssumeRoleInput) {
+
+	if externalId == "" {
+		return &sts.AssumeRoleInput{
+			RoleArn:         aws.String(arn),
+			RoleSessionName: aws.String(sessionName),
+		}
+	}
+
+	return &sts.AssumeRoleInput{
+		ExternalId:      aws.String(externalId),
+		RoleArn:         aws.String(arn),
+		RoleSessionName: aws.String(sessionName),
+	}
+
+}
+
 func assumeRoleFromAWS(arn string, externalId string, request *Request) (*sts.AssumeRoleOutput, error) {
 	request.log.Infof("Looking for STS Assume Role for %s", arn)
 
@@ -96,18 +113,7 @@ func assumeRoleFromAWS(arn string, externalId string, request *Request) (*sts.As
 
 	request.setLabel("assume_role_from_aws_cache", "miss")
 	request.log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
-	if externalId == "" {
-		req := stsService.AssumeRoleRequest(&sts.AssumeRoleInput{
-			RoleArn:         aws.String(arn),
-			RoleSessionName: aws.String("go-metadataproxy"),
-		})
-	} else {
-		req := stsService.AssumeRoleRequest(&sts.AssumeRoleInput{
-			ExternalId:      aws.String(externalId),
-			RoleArn:         aws.String(arn),
-			RoleSessionName: aws.String("go-metadataproxy"),
-		})
-	}
+	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalId, "go-metadataproxy"))
 
 	assumedRole, err := req.Send()
 	if err != nil {
