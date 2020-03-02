@@ -40,22 +40,22 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, strin
 
 	err := backoff.RetryNotify(retryable, b, notify)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	roleName, err := findDockerContainerIAMRole(container, request)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	externalId, err := findDockerContainerExternalId(container, request)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	role, err := readRoleFromAWS(roleName, request)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return role, externalId, nil
