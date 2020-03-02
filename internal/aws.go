@@ -86,7 +86,6 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 }
 
 func constructAssumeRoleInput(arn string, externalId string, sessionName string) (*sts.AssumeRoleInput) {
-
 	if externalId == "" {
 		return &sts.AssumeRoleInput{
 			RoleArn:         aws.String(arn),
@@ -99,7 +98,6 @@ func constructAssumeRoleInput(arn string, externalId string, sessionName string)
 		RoleArn:         aws.String(arn),
 		RoleSessionName: aws.String(sessionName),
 	}
-
 }
 
 func assumeRoleFromAWS(arn string, externalId string, request *Request) (*sts.AssumeRoleOutput, error) {
