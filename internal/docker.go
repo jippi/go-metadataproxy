@@ -106,11 +106,8 @@ func findDockerContainerIAMRole(container *docker.Container, request *Request) (
 }
 
 func findDockerContainerExternalId(container *docker.Container, request *Request) (string, error) {
-	if v, ok := findDockerContainerEnvValue(container, "IAM_EXTERNAL_ID"); ok {
-		return v, nil
-	}
-
-	return "", nil
+	v, _ := findDockerContainerEnvValue(container, "IAM_EXTERNAL_ID")
+	return v, nil
 }
 
 func findDockerContainerEnvValue(container *docker.Container, key string) (string, bool) {
