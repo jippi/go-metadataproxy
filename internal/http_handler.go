@@ -173,7 +173,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, externalId, err := findContainerRoleByAddress(r.RemoteAddr, request)
+	roleInfo, _, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
 		request.setLabels(map[string]string{
 			"response_code":     "404",
