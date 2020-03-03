@@ -118,8 +118,8 @@ func assumeRoleFromAWS(arn string, externalId string, request *Request) (*sts.As
 		return nil, err
 	}
 
-	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - 1*time.Minute
-	request.log.Infof("Will cache STS Assumed Role info for %s in %s", arn, ttl.String())
+	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - 15*time.Minute
+	request.log.Infof("Will cache STS Assumed Role info for %s for %s", arn, ttl.String())
 	permissionCache.Set(arn, assumedRole, ttl)
 	return assumedRole, nil
 }
