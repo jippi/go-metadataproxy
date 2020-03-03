@@ -48,15 +48,12 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, strin
 		return nil, "", err
 	}
 
-	externalId, err := findDockerContainerExternalId(container, request)
-	if err != nil {
-		return nil, "", err
-	}
-
 	role, err := readRoleFromAWS(roleName, request)
 	if err != nil {
 		return nil, "", err
 	}
+
+	externalId := findDockerContainerExternalId(container, request)
 
 	return role, externalId, nil
 }
