@@ -105,6 +105,11 @@ func findDockerContainerIAMRole(container *docker.Container, request *Request) (
 	return "", fmt.Errorf("Could not find IAM_ROLE in the container ENV config")
 }
 
+func findDockerContainerExternalId(container *docker.Container, request *Request) string {
+	v, _ := findDockerContainerEnvValue(container, "IAM_EXTERNAL_ID")
+	return v
+}
+
 func findDockerContainerEnvValue(container *docker.Container, key string) (string, bool) {
 	for _, envPair := range container.Config.Env {
 		chunks := strings.SplitN(envPair, "=", 2)
