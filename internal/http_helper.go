@@ -11,6 +11,7 @@ import (
 	"github.com/cenkalti/backoff"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
+	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
@@ -101,6 +102,7 @@ func newTransport() *customTransport {
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
+	httptrace.WrapRoundTripper(tr)
 	return tr
 }
 
