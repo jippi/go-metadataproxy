@@ -175,7 +175,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	request := NewRequest(r, "iam-security-crentials-for-role", "/meta-data/iam/security-credentials/{requested_role}")
-	request.setLabel("requested_role", vars["requested_role"])
+	request.setLabel("aws.role.requested", vars["requested_role"])
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 	defer request.incrCounterWithLabels([]string{"http_request"}, 1)
 
