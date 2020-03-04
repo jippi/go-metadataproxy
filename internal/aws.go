@@ -134,8 +134,18 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 		return nil, err
 	}
 
-	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - 1*time.Minute
+	ttl := assumedRole.Credentials.Expiration.Sub(time.Now()) - getExpirationOffset()
 	request.log.Infof("Will cache STS Assumed Role info for %s in %s", arn, ttl.String())
 	permissionCache.Set(arn, assumedRole, ttl)
 	return assumedRole, nil
+}
+
+func getExpirationOffset() time.Duration {
+	durStr := getenvDefault("ROLE_CACHE_OFFSET", "5m")
+	dur, err := time.ParseDuration(durStr)
+	if err != nil {
+		panic(fmt.Sprintf("Invalid value for ROLE_CACHE_OFFSET: %s", durStr))
+	}
+
+	return dur
 }

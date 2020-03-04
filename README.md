@@ -54,6 +54,7 @@ script, or set via docker environment variables.
 | `LOG_LEVEL` | String | "info" | Change the log level (`debug`, `info`, `warning`, `error`, `fatal`, `panic`) |
 | `LOG_FORMAT` | String | "text" | Change the log format (`text`, `json`, `gelf`) |
 | `DOCKER_URL` | String | unix://var/run/docker.sock | Url of the docker daemon. The default is to access docker via its socket. |
+| `ROLE_CACHE_OFFSET` | String | | (Optional) Time to substract from Role cache (default: `5m`) (Example: `5m`, `60s`, `5m30s`) |
 | `NEWRELIC_APP_NAME` | String | | (Optional) NewRelic application name. |
 | `NEWRELIC_LICENSE` | String | | (Optional) NewRelic license key. |
 | `COPY_DOCKER_LABELS` | String | | (Optional) a comma separated list of optional case-senstivie Docker labels to copy into telemetry labels. When copied to telemetry label, the string is automatically lower-cased. (example `COPY_DOCKER_LABELS=PROJECT_VERSION,SOMETHING_ELSE`) |
