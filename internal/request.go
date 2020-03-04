@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	metrics "github.com/armon/go-metrics"
 	"github.com/gorilla/mux"
@@ -15,6 +16,10 @@ const (
 	telemetryPrefix = "metadataproxy"
 )
 
+var (
+	isDataDogEnabled = os.Getenv("DATADOG_SERVICE_NAME") != ""
+)
+
 type Request struct {
 	request       *http.Request
 	vars          map[string]string
@@ -22,11 +27,13 @@ type Request struct {
 	log           *logrus.Entry
 	metricsLabels []metrics.Label
 	loggingLabels logrus.Fields
+	datadogSpan   tracer.Span
 }
 
 func NewRequest(r *http.Request, name, path string) *Request {
 	id := uuid.NewV4()
 
+	// Create struct
 	request := &Request{
 		request:       r,
 		vars:          mux.Vars(r),
@@ -36,21 +43,22 @@ func NewRequest(r *http.Request, name, path string) *Request {
 		loggingLabels: logrus.Fields{},
 	}
 
+	// Setup tracing first
+	if isDataDogEnabled {
+		if span, found := tracer.SpanFromContext(r.Context()); found {
+			request.datadogSpan = span
+
+			span.SetTag("request_id", request.id)
+			request.setLogLabel("dd.trace_id", fmt.Sprintf("%d", span.Context().TraceID()))
+			request.setLogLabel("dd.span_id", fmt.Sprintf("%d", span.Context().SpanID()))
+		}
+	}
+
 	request.setLabel("handler_name", name)
 	request.setLabel("request_path", path)
 	request.setLogLabel("remote_addr", remoteIP(r.RemoteAddr))
 
 	request.setLabelsFromRequest()
-
-	if isDataDogEnabled() {
-		if span, found := tracer.SpanFromContext(r.Context()); found {
-			span.SetTag("handler_name", name)
-			span.SetTag("request_path", path)
-
-			request.setLogLabel("dd.trace_id", fmt.Sprintf("%d", span.Context().TraceID()))
-			request.setLogLabel("dd.span_id", fmt.Sprintf("%d", span.Context().SpanID()))
-		}
-	}
 
 	return request
 }
@@ -58,11 +66,13 @@ func NewRequest(r *http.Request, name, path string) *Request {
 // Set a log label (only)
 func (r *Request) setLogLabel(key, value string) {
 	r.log = r.log.WithField(key, value)
+	r.setTraceTag(key, value)
 }
 
 // Set a metric label (only)
 func (r *Request) setMetricsLabel(key, value string) {
 	r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: value})
+	r.setTraceTag(key, value)
 }
 
 // Set both a log label and metric label
@@ -75,6 +85,13 @@ func (r *Request) setLabel(key, value string) {
 func (r *Request) setLabels(pairs map[string]string) {
 	for key, value := range pairs {
 		r.setLabel(key, value)
+	}
+}
+
+// Set Trace tag details
+func (r *Request) setTraceTag(key, value string) {
+	if isDataDogEnabled {
+		r.datadogSpan.SetTag(key, value)
 	}
 }
 

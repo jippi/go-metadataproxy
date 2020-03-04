@@ -348,7 +348,3 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
-
-func isDataDogEnabled() bool {
-	return os.Getenv("DATADOG_SERVICE_NAME") != ""
-}
