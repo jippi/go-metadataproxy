@@ -96,8 +96,7 @@ func configureRouter(r handlerFunc) http.Handler {
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
 func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
-	request := NewRequest()
-	request.setLabelsFromRequest("iam-info-handler", "/meta-data/iam/info", r)
+	request := NewRequest(r, "iam-info-handler", "/meta-data/iam/info")
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -155,8 +154,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
 func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
-	request := NewRequest()
-	request.setLabelsFromRequest("iam-security-credentials-name", "/meta-data/iam/security-credentials/", r)
+	request := NewRequest(r, "iam-security-credentials-name", "/meta-data/iam/security-credentials/")
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -195,8 +193,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	request := NewRequest()
-	request.setLabelsFromRequest("iam-security-crentials-for-role", "/meta-data/iam/security-credentials/{requested_role}", r)
+	request := NewRequest(r, "iam-security-crentials-for-role", "/meta-data/iam/security-credentials/{requested_role}")
 	request.setLabel("requested_role", vars["requested_role"])
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
@@ -269,8 +266,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
-	request := NewRequest()
-	request.setLabelsFromRequest("passthrough", r.URL.String(), r)
+	request := NewRequest(r, "passthrough", r.URL.String())
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -321,8 +317,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
-	request := NewRequest()
-	request.setLabelsFromRequest("metrics", "/metrics", r)
+	request := NewRequest(r, "metrics", "/metrics")
 	request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
