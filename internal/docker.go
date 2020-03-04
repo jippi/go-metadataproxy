@@ -38,7 +38,7 @@ func ConfigureDocker() {
 }
 
 func findDockerContainer(ip string, request *Request, parentSpan tracer.Span) (*docker.Container, error) {
-	span := tracer.StartSpan("findDockerContainer", tracer.ChildOf(parentSpan.Context()))
+	span := tracer.StartSpan("findDockerContainer", tracer.ChildOf(parentSpan.Context()), tracer.ServiceName("docker"))
 	defer span.Finish()
 	span.SetTag("docker.ip", ip)
 
