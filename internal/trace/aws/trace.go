@@ -30,11 +30,11 @@ func WrapSession(s aws.Config, opts ...Option) aws.Config {
 	h := &handlers{cfg: cfg}
 	s = s.Copy()
 	s.Handlers.Send.PushFrontNamed(aws.NamedHandler{
-		Name: "gopkg.in/DataDog/dd-trace-go.v1/contrib/aws/aws-sdk-go/aws/handlers.Send",
+		Name: "github.com/jippi/go-metadataproxy/internal/trace/aws/handlers.Send",
 		Fn:   h.Send,
 	})
 	s.Handlers.Complete.PushBackNamed(aws.NamedHandler{
-		Name: "gopkg.in/DataDog/dd-trace-go.v1/contrib/aws/aws-sdk-go/aws/handlers.Complete",
+		Name: "github.com/jippi/go-metadataproxy/internal/trace/aws/handlers.Complete",
 		Fn:   h.Complete,
 	})
 	return s
