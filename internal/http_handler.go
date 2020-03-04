@@ -100,7 +100,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	request := NewRequest()
 	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]interface{}{
+	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "iam-info-handler",
 		"remote_addr":     r.RemoteAddr,
@@ -121,7 +121,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "could_not_find_container",
 		})
@@ -137,7 +137,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// assume the role
 	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, request)
 	if err != nil {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "could_not_assume_role",
 		})
@@ -148,7 +148,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// build response
-	response := map[string]interface{}{
+	response := map[string]string{
 		"Code":               "Success",
 		"LastUpdated":        assumeRole.Credentials.Expiration.Add(-1 * time.Hour).Format(awsTimeLayoutResponse),
 		"InstanceProfileArn": *assumeRole.AssumedRoleUser.Arn,
@@ -168,7 +168,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 
 	request := NewRequest()
 	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]interface{}{
+	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "iam-security-credentials-name",
 		"remote_addr":     remoteIP(r.RemoteAddr),
@@ -189,7 +189,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "could_not_find_container",
 		})
@@ -214,7 +214,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 	request := NewRequest()
 	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]interface{}{
+	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "iam-security-crentials-for-role",
 		"remote_addr":     remoteIP(r.RemoteAddr),
@@ -236,7 +236,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "could_not_find_container",
 		})
@@ -248,7 +248,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 	// verify the requested role match the container role
 	if vars["requested_role"] != *roleInfo.RoleName {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "role_names_do_not_match",
 		})
@@ -261,7 +261,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	// assume the container role
 	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, request)
 	if err != nil {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "could_not_assume_role",
 		})
@@ -273,7 +273,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// build response
-	response := map[string]interface{}{
+	response := map[string]string{
 		"Code":            "Success",
 		"LastUpdated":     assumeRole.Credentials.Expiration.Add(-1 * time.Hour).Format(awsTimeLayoutResponse),
 		"Type":            "AWS-HMAC",
@@ -296,7 +296,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 
 	request := NewRequest()
 	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]interface{}{
+	request.setLabels(map[string]string{
 		"aws_api_version": vars["api_version"],
 		"handler_name":    "passthrough",
 		"remote_addr":     remoteIP(r.RemoteAddr),
@@ -332,7 +332,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	// use the incoming http request to construct upstream request
 	resp, err := client.Do(r)
 	if err != nil {
-		request.setLabels(map[string]interface{}{
+		request.setLabels(map[string]string{
 			"response_code":     "404",
 			"error_description": "could_not_assume_role",
 		})
@@ -354,7 +354,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest()
 	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]interface{}{
+	request.setLabels(map[string]string{
 		"handler_name": "metrics",
 		"remote_addr":  remoteIP(r.RemoteAddr),
 		"request_path": "/metrics",
