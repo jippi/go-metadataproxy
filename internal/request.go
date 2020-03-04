@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	metrics "github.com/armon/go-metrics"
 	"github.com/gorilla/mux"
@@ -90,9 +91,16 @@ func (r *Request) setLabels(pairs map[string]string) {
 
 // Set Trace tag details
 func (r *Request) setTraceTag(key, value string) {
-	if isDataDogEnabled {
-		r.datadogSpan.SetTag(key, value)
+	if !isDataDogEnabled {
+		return
 	}
+
+	// Don't add datadog own data to traces
+	if strings.HasPrefix(key, "dd.") {
+		return
+	}
+
+	r.datadogSpan.SetTag(key, value)
 }
 
 func (r *Request) incrCounterWithLabels(path []string, val float32) {
