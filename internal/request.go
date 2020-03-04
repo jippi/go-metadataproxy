@@ -38,6 +38,8 @@ func NewRequest(r *http.Request, name, path string) *Request {
 
 	request.setLabel("handler_name", name)
 	request.setLabel("request_path", path)
+	request.setLogLabel("remote_addr", remoteIP(r.RemoteAddr))
+
 	request.setLabelsFromRequest()
 
 	if isDataDogEnabled() {
@@ -92,8 +94,9 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 }
 
 func (r *Request) setLabelsFromRequest() {
-	r.setLabel("aws_api_version", r.vars["api_version"])
-	r.setLogLabel("remote_addr", remoteIP(r.request.RemoteAddr))
+	if version, ok := r.vars["api_version"]; ok {
+		r.setLabel("aws_api_version", version)
+	}
 
 	if len(copyRequestHeaders) >= 0 {
 		for _, label := range copyRequestHeaders {
