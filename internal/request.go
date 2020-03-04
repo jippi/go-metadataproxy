@@ -129,3 +129,15 @@ func (r *Request) setLabelsFromRequest() {
 		}
 	}
 }
+
+func (r *Request) HandleError(err error, code int, description string, w http.ResponseWriter) {
+	r.datadogSpan.Finish(tracer.WithError(err))
+
+	r.setLabels(map[string]string{
+		"response_code":     fmt.Sprintf("%d", code),
+		"error_description": description,
+	})
+
+	r.log.Error(err)
+	http.NotFound(w, nil)
+}

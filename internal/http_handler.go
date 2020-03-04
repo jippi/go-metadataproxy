@@ -98,6 +98,7 @@ func configureRouter(r handlerFunc) http.Handler {
 func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest(r, "iam-info-handler", "/meta-data/iam/info")
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+	defer request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
 	request.setResponseHeaders(w)
@@ -112,13 +113,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, externalID, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "could_not_find_container",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-
-		httpError(err, w, r, request)
+		request.HandleError(err, 404, "could_not_find_container", w)
 		return
 	}
 
@@ -128,13 +123,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	// assume the role
 	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, externalID, request)
 	if err != nil {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "could_not_assume_role",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-
-		httpError(err, w, r, request)
+		request.HandleError(err, 404, "could_not_assume_role", w)
 		return
 	}
 
@@ -149,13 +138,13 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	sendJSONResponse(w, response)
 
 	request.setLabel("response_code", "200")
-	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
 func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest(r, "iam-security-credentials-name", "/meta-data/iam/security-credentials/")
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+	defer request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
 	request.setResponseHeaders(w)
@@ -170,13 +159,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, _, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "could_not_find_container",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-
-		httpError(err, w, r, request)
+		request.HandleError(err, 404, "could_not_find_container", w)
 		return
 	}
 
@@ -186,7 +169,6 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(*roleInfo.RoleName))
 
 	request.setLabel("response_code", "200")
-	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
@@ -196,6 +178,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest(r, "iam-security-crentials-for-role", "/meta-data/iam/security-credentials/{requested_role}")
 	request.setLabel("requested_role", vars["requested_role"])
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+	defer request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
 	request.setResponseHeaders(w)
@@ -210,39 +193,21 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	// read the role from AWS
 	roleInfo, externalID, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "could_not_find_container",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-
-		httpError(err, w, r, request)
+		request.HandleError(err, 404, "could_not_find_container", w)
 		return
 	}
 
 	// verify the requested role match the container role
 	if vars["requested_role"] != *roleInfo.RoleName {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "role_names_do_not_match",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-
-		httpError(fmt.Errorf("Role names do not match (requested: '%s' vs container role: '%s')", vars["requested_role"], *roleInfo.RoleName), w, r, request)
+		err := fmt.Errorf("Role names do not match (requested: '%s' vs container role: '%s')", vars["requested_role"], *roleInfo.RoleName)
+		request.HandleError(err, 404, "role_names_do_not_match", w)
 		return
 	}
 
 	// assume the container role
 	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, externalID, request)
 	if err != nil {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "could_not_assume_role",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-		request.log.Error(err)
-
-		http.NotFound(w, r)
+		request.HandleError(err, 404, "could_not_assume_role", w)
 		return
 	}
 
@@ -259,15 +224,14 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 	// send response
 	sendJSONResponse(w, response)
-
 	request.setLabel("response_code", "200")
-	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest(r, "passthrough", r.URL.String())
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
+	defer request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
 	request.setResponseHeaders(w)
@@ -297,13 +261,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	// use the incoming http request to construct upstream request
 	resp, err := client.Do(r)
 	if err != nil {
-		request.setLabels(map[string]string{
-			"response_code":     "404",
-			"error_description": "could_not_assume_role",
-		})
-		request.incrCounterWithLabels([]string{"http_request"}, 1)
-
-		httpError(fmt.Errorf("Could not proxy request: %s", err), w, r, request)
+		request.HandleError(err, 404, "could_not_assume_role", w)
 		return
 	}
 	defer resp.Body.Close()
@@ -312,13 +270,12 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, resp.Body)
 
 	request.setLabel("response_code", fmt.Sprintf("%v", resp.StatusCode))
-	request.incrCounterWithLabels([]string{"http_request"}, 1)
 }
 
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest(r, "metrics", "/metrics")
-	request.incrCounterWithLabels([]string{"http_request"}, 1)
+	defer request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
 	request.setResponseHeaders(w)

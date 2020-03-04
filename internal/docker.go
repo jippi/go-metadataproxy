@@ -37,8 +37,8 @@ func ConfigureDocker() {
 	dockerClient = client
 }
 
-func findDockerContainer(ip string, request *Request) (*docker.Container, error) {
-	span := tracer.StartSpan("findDockerContainer", tracer.ChildOf(request.datadogSpan.Context()))
+func findDockerContainer(ip string, request *Request, parentSpan tracer.Span) (*docker.Container, error) {
+	span := tracer.StartSpan("findDockerContainer", tracer.ChildOf(parentSpan.Context()))
 	defer span.Finish()
 	span.SetTag("docker.ip", ip)
 
@@ -46,11 +46,13 @@ func findDockerContainer(ip string, request *Request) (*docker.Container, error)
 	request.log.Infof("Looking up container info for %s in docker", ip)
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, err
 	}
 
-	container, err = findContainerByIP(ip, request, containers)
+	container, err = findContainerByIP(ip, request, containers, span)
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, err
 	}
 
@@ -78,8 +80,8 @@ func findDockerContainer(ip string, request *Request) (*docker.Container, error)
 	return container, nil
 }
 
-func findContainerByIP(ip string, request *Request, containers []docker.APIContainers) (*docker.Container, error) {
-	span := tracer.StartSpan("findContainerByIP", tracer.ChildOf(request.datadogSpan.Context()))
+func findContainerByIP(ip string, request *Request, containers []docker.APIContainers, parentSpan tracer.Span) (*docker.Container, error) {
+	span := tracer.StartSpan("findContainerByIP", tracer.ChildOf(parentSpan.Context()))
 	defer span.Finish()
 	span.SetTag("docker.ip", ip)
 
@@ -90,6 +92,7 @@ func findContainerByIP(ip string, request *Request, containers []docker.APIConta
 
 				inspectedContainer, err := dockerClient.InspectContainer(container.ID)
 				if err != nil {
+					span.Finish(tracer.WithError(err))
 					return nil, err
 				}
 

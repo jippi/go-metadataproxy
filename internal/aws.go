@@ -37,8 +37,8 @@ func ConfigureAWS() {
 	stsService = sts.New(cfg)
 }
 
-func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
-	span := tracer.StartSpan("readRoleFromAWS", tracer.ChildOf(request.datadogSpan.Context()))
+func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*iam.Role, error) {
+	span := tracer.StartSpan("readRoleFromAWS", tracer.ChildOf(parentSpan.Context()))
 	defer span.Finish()
 	span.SetTag("aws.role", role)
 
@@ -80,6 +80,7 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 
 		resp, err := req.Send(req.Context())
 		if err != nil {
+			span.Finish(tracer.WithError(err))
 			return nil, err
 		}
 
@@ -125,6 +126,7 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 
 	assumedRole, err := req.Send(req.Context())
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, err
 	}
 
