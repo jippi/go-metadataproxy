@@ -119,7 +119,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, externalId, err := findContainerRoleByAddress(r.RemoteAddr, request)
+	roleInfo, externalID, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
 		request.setLabels(map[string]string{
 			"response_code":     "404",
@@ -135,7 +135,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	request.setLabel("role_name", *roleInfo.RoleName)
 
 	// assume the role
-	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, externalId, request)
+	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, externalID, request)
 	if err != nil {
 		request.setLabels(map[string]string{
 			"response_code":     "404",
@@ -234,7 +234,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, externalId, err := findContainerRoleByAddress(r.RemoteAddr, request)
+	roleInfo, externalID, err := findContainerRoleByAddress(r.RemoteAddr, request)
 	if err != nil {
 		request.setLabels(map[string]string{
 			"response_code":     "404",
@@ -259,7 +259,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// assume the container role
-	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, externalId, request)
+	assumeRole, err := assumeRoleFromAWS(*roleInfo.Arn, externalID, request)
 	if err != nil {
 		request.setLabels(map[string]string{
 			"response_code":     "404",

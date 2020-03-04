@@ -85,8 +85,8 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 	return roleObject, nil
 }
 
-func constructAssumeRoleInput(arn string, externalId string) *sts.AssumeRoleInput {
-	if externalId == "" {
+func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInput {
+	if externalID == "" {
 		return &sts.AssumeRoleInput{
 			RoleArn:         aws.String(arn),
 			RoleSessionName: aws.String("go-metadataproxy"),
@@ -94,7 +94,7 @@ func constructAssumeRoleInput(arn string, externalId string) *sts.AssumeRoleInpu
 	}
 
 	return &sts.AssumeRoleInput{
-		ExternalId:      aws.String(externalId),
+		ExternalId:      aws.String(externalID),
 		RoleArn:         aws.String(arn),
 		RoleSessionName: aws.String("go-metadataproxy"),
 	}

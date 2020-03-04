@@ -53,9 +53,9 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, strin
 		return nil, "", err
 	}
 
-	externalId := findDockerContainerExternalId(container, request)
+	externalID := findDockerContainerexternalID(container, request)
 
-	return role, externalId, nil
+	return role, externalID, nil
 }
 
 func isCompatibleAPIVersion(r *http.Request) bool {
