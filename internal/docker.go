@@ -15,6 +15,7 @@ var (
 	copyDockerLabels   = strings.Split(os.Getenv("COPY_DOCKER_LABELS"), ",")
 	copyDockerEnvs     = strings.Split(os.Getenv("COPY_DOCKER_ENV"), ",")
 	copyRequestHeaders = strings.Split(os.Getenv("COPY_REQUEST_HEADERS"), ",")
+	labelSeparator     = getenvDefault("LABEL_SEPARATOR", "_")
 )
 
 // ConfigureDocker will setup a docker client used during normal operations
@@ -123,5 +124,13 @@ func findDockerContainerEnvValue(container *docker.Container, key string) (strin
 }
 
 func labelName(prefix, label string) string {
-	return fmt.Sprintf("%s_%s", prefix, strings.ToLower(label))
+	return fmt.Sprintf("%s%s%s", prefix, labelSeparator, strings.ToLower(label))
+}
+
+func getenvDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }
