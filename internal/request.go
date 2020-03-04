@@ -39,7 +39,7 @@ func NewRequest(r *http.Request, name, path string) *Request {
 		request:       r,
 		vars:          mux.Vars(r),
 		id:            id.String(),
-		log:           logrus.WithField("request_id", id.String()),
+		log:           logrus.WithField("request.id", id.String()),
 		metricsLabels: make([]metrics.Label, 0),
 		loggingLabels: logrus.Fields{},
 	}
@@ -51,10 +51,10 @@ func NewRequest(r *http.Request, name, path string) *Request {
 		request.setLogLabel("dd.trace_id", fmt.Sprintf("%d", span.Context().TraceID()))
 		request.setLogLabel("dd.span_id", fmt.Sprintf("%d", span.Context().SpanID()))
 	}
-	request.datadogSpan.SetTag("request_id", request.id)
+	request.datadogSpan.SetTag("request.id", request.id)
 
-	request.setLabel("handler_name", name)
-	request.setLabel("request_path", path)
+	request.setLabel("http.handler", name)
+	request.setLabel("request.path", path)
 	request.setLogLabel("remote_addr", remoteIP(r.RemoteAddr))
 
 	request.setLabelsFromRequest()
@@ -118,7 +118,7 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 
 func (r *Request) setLabelsFromRequest() {
 	if version, ok := r.vars["api_version"]; ok {
-		r.setLabel("aws_api_version", version)
+		r.setLabel("aws.api_version", version)
 	}
 
 	if len(copyRequestHeaders) >= 0 {
@@ -134,8 +134,9 @@ func (r *Request) HandleError(err error, code int, description string, w http.Re
 	r.datadogSpan.Finish(tracer.WithError(err))
 
 	r.setLabels(map[string]string{
-		"response_code":     fmt.Sprintf("%d", code),
-		"error_description": description,
+		"response.code":     fmt.Sprintf("%d", code),
+		"error.code":        description,
+		"error.description": err.Error(),
 	})
 
 	r.log.Error(err)

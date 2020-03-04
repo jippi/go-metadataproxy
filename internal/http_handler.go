@@ -105,7 +105,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		request.log.Info("Request is using too old version of meta-data API, passing through directly")
+		request.log.Warn("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
@@ -135,9 +135,8 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 		"InstanceProfileId":  *assumeRole.AssumedRoleUser.AssumedRoleId,
 	}
 
-	sendJSONResponse(w, response)
-
 	request.setLabel("response_code", "200")
+	sendJSONResponse(w, response)
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
@@ -151,7 +150,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		request.log.Info("Request is using too old version of meta-data API, passing through directly")
+		request.log.Warn("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
@@ -164,11 +163,11 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send the response
+	request.setLabel("response_code", "200")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(*roleInfo.RoleName))
 
-	request.setLabel("response_code", "200")
 }
 
 // handles: /{api_version}/meta-data/iam/security-credentials/{requested_role}
@@ -185,7 +184,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 	// ensure we got compatible api version
 	if !isCompatibleAPIVersion(r) {
-		request.log.Info("Request is using too old version of meta-data API, passing through directly")
+		request.log.Warn("Request is using too old version of meta-data API, passing through directly")
 		passthroughHandler(w, r)
 		return
 	}
@@ -223,8 +222,8 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send response
-	sendJSONResponse(w, response)
 	request.setLabel("response_code", "200")
+	sendJSONResponse(w, response)
 }
 
 // handles: /*
