@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	metrics "github.com/armon/go-metrics"
+	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
@@ -60,8 +61,15 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Request-ID", r.id)
 }
 
-func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
+func (r *Request) setLabelsFromRequest(name, path string, httpRequest *http.Request) {
 	labels := make(map[string]string)
+	vars := mux.Vars(httpRequest)
+
+	r.setLabel("aws_api_version", vars["api_version"])
+	r.setLabel("handler_name", name)
+	r.setLabel("request_path", path)
+
+	r.log = r.log.WithField("remote_addr", remoteIP(httpRequest.RemoteAddr))
 
 	if isDataDogEnabled() {
 		if span, found := tracer.SpanFromContext(httpRequest.Context()); found {

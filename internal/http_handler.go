@@ -96,16 +96,8 @@ func configureRouter(r handlerFunc) http.Handler {
 // handles: /{api_version}/meta-data/iam/info
 // handles: /{api_version}/meta-data/iam/info/{junk}
 func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
 	request := NewRequest()
-	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]string{
-		"aws_api_version": vars["api_version"],
-		"handler_name":    "iam-info-handler",
-		"remote_addr":     r.RemoteAddr,
-		"request_path":    "/meta-data/iam/info",
-	})
+	request.setLabelsFromRequest("iam-info-handler", "/meta-data/iam/info", r)
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -163,17 +155,8 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 // handles: /{api_version}/meta-data/iam/security-credentials/
 func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
-	// setup basic telemetry
-	vars := mux.Vars(r)
-
 	request := NewRequest()
-	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]string{
-		"aws_api_version": vars["api_version"],
-		"handler_name":    "iam-security-credentials-name",
-		"remote_addr":     remoteIP(r.RemoteAddr),
-		"request_path":    "/meta-data/iam/security-credentials/",
-	})
+	request.setLabelsFromRequest("iam-security-credentials-name", "/meta-data/iam/security-credentials/", r)
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -213,14 +196,8 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	request := NewRequest()
-	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]string{
-		"aws_api_version": vars["api_version"],
-		"handler_name":    "iam-security-crentials-for-role",
-		"remote_addr":     remoteIP(r.RemoteAddr),
-		"request_path":    "/meta-data/iam/security-credentials/{requested_role}",
-		"requested_role":  vars["requested_role"],
-	})
+	request.setLabelsFromRequest("iam-security-crentials-for-role", "/meta-data/iam/security-credentials/{requested_role}", r)
+	request.setLabel("requested_role", vars["requested_role"])
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -292,16 +269,8 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 
 // handles: /*
 func passthroughHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
 	request := NewRequest()
-	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]string{
-		"aws_api_version": vars["api_version"],
-		"handler_name":    "passthrough",
-		"remote_addr":     remoteIP(r.RemoteAddr),
-		"request_path":    r.URL.String(),
-	})
+	request.setLabelsFromRequest("passthrough", r.URL.String(), r)
 	request.log.Infof("Handling %s from %s", r.URL.String(), remoteIP(r.RemoteAddr))
 
 	// publish specific go-metadataproxy headers
@@ -353,12 +322,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 // handles: /metrics
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	request := NewRequest()
-	request.setLabelsFromRequestHeader(r)
-	request.setLabels(map[string]string{
-		"handler_name": "metrics",
-		"remote_addr":  remoteIP(r.RemoteAddr),
-		"request_path": "/metrics",
-	})
+	request.setLabelsFromRequest("metrics", "/metrics", r)
 	request.incrCounterWithLabels([]string{"http_request"}, 1)
 
 	// publish specific go-metadataproxy headers
