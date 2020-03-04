@@ -101,7 +101,9 @@ func findContainerByIP(ip string, request *Request, containers []docker.APIConta
 		}
 	}
 
-	return nil, fmt.Errorf("Could not find any container with IP %s", ip)
+	err := fmt.Errorf("Could not find any container with IP %s", ip)
+	span.Finish(tracer.WithError(err))
+	return nil, err
 }
 
 func findDockerContainerIAMRole(container *docker.Container, request *Request) (string, error) {
