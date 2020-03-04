@@ -141,7 +141,7 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 }
 
 func getExpirationOffset() time.Duration {
-	durStr := getenvDefault("ROLE_CACHE_OFFSET", "5m")
+	durStr := getenvDefault("ROLE_CACHE_OFFSET", "15m")
 	dur, err := time.ParseDuration(durStr)
 	if err != nil {
 		panic(fmt.Sprintf("Invalid value for ROLE_CACHE_OFFSET: %s", durStr))
