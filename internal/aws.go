@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
+	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
@@ -32,6 +34,19 @@ func ConfigureAWS() {
 	if err != nil {
 		log.Fatalf("Unable to load AWS SDK config, " + err.Error())
 	}
+
+	// Inject round-tripper tracing
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:                 http.ProxyFromEnvironment,
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   10,
+			IdleConnTimeout:       30 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 5 * time.Second,
+		},
+	}
+	cfg.HTTPClient = httptrace.WrapClient(client)
 
 	iamService = iam.New(cfg)
 	stsService = sts.New(cfg)
