@@ -111,7 +111,7 @@ func iamInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, externalID, err := findContainerRoleByAddress(r.RemoteAddr, request)
+	roleInfo, externalID, err := findAWSRoleInformation(r.RemoteAddr, request)
 	if err != nil {
 		request.HandleError(err, 404, "could_not_find_container", w)
 		return
@@ -156,7 +156,7 @@ func iamSecurityCredentialsName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, _, err := findContainerRoleByAddress(r.RemoteAddr, request)
+	roleInfo, _, err := findAWSRoleInformation(r.RemoteAddr, request)
 	if err != nil {
 		request.HandleError(err, 404, "could_not_find_container", w)
 		return
@@ -190,7 +190,7 @@ func iamSecurityCredentialsForRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// read the role from AWS
-	roleInfo, externalID, err := findContainerRoleByAddress(r.RemoteAddr, request)
+	roleInfo, externalID, err := findAWSRoleInformation(r.RemoteAddr, request)
 	if err != nil {
 		request.HandleError(err, 404, "could_not_find_container", w)
 		return
@@ -237,7 +237,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 
 	// try to enrich the telemetry with additional labels
 	// if this fail, we will still proxy the request as-is
-	findContainerRoleByAddress(r.RemoteAddr, request)
+	findAWSRoleInformation(r.RemoteAddr, request)
 
 	r.RequestURI = ""
 

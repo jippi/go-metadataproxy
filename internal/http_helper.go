@@ -19,8 +19,8 @@ func remoteIP(addr string) string {
 	return strings.Split(addr, ":")[0]
 }
 
-func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, string, error) {
-	span := tracer.StartSpan("findContainerRoleByAddress", tracer.ChildOf(request.datadogSpan.Context()))
+func findAWSRoleInformation(addr string, request *Request) (*iam.Role, string, error) {
+	span := tracer.StartSpan("findAWSRoleInformation", tracer.ChildOf(request.datadogSpan.Context()))
 	defer span.Finish()
 
 	var container *docker.Container
