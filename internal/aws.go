@@ -79,7 +79,7 @@ func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*ia
 		req := iamService.GetRoleRequest(&iam.GetRoleInput{
 			RoleName: aws.String(role),
 		})
-		resp, err := req.Send(req.Context())
+		resp, err := req.Send(tracer.ContextWithSpan(req.Context(), span))
 		if err != nil {
 			span.Finish(tracer.WithError(err))
 			return nil, err
@@ -125,7 +125,7 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 	request.log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
 	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalID))
 
-	assumedRole, err := req.Send(req.Context())
+	assumedRole, err := req.Send(tracer.ContextWithSpan(req.Context(), span))
 	if err != nil {
 		span.Finish(tracer.WithError(err))
 		return nil, err

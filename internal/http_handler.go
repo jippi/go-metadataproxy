@@ -248,6 +248,7 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 		r.URL.Host = "169.254.169.254"
 		r.Host = "169.254.169.254"
 	}
+	r.WithContext(tracer.ContextWithSpan(r.Context(), request.datadogSpan))
 
 	// create HTTP client
 	tp := newTransport()
@@ -257,7 +258,6 @@ func passthroughHandler(w http.ResponseWriter, r *http.Request) {
 		request.setGaugeWithLabels([]string{"aws_request_time"}, float32(tp.ReqDuration()))
 		request.setGaugeWithLabels([]string{"aws_connection_time"}, float32(tp.ConnDuration()))
 	}()
-
 	// use the incoming http request to construct upstream request
 	resp, err := client.Do(r)
 	if err != nil {
