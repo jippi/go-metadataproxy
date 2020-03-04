@@ -17,7 +17,7 @@ func remoteIP(addr string) string {
 	return strings.Split(addr, ":")[0]
 }
 
-func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, error) {
+func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, string, error) {
 	var container *docker.Container
 
 	// retry finding the Docker container since sometimes Docker doesn't actually list the container until its been
@@ -40,20 +40,22 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, error
 
 	err := backoff.RetryNotify(retryable, b, notify)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	roleName, err := findDockerContainerIAMRole(container, request)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	role, err := readRoleFromAWS(roleName, request)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return role, nil
+	externalId := findDockerContainerExternalId(container, request)
+
+	return role, externalId, nil
 }
 
 func isCompatibleAPIVersion(r *http.Request) bool {
