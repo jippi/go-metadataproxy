@@ -42,18 +42,18 @@ func ConfigureAWS() {
 func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*iam.Role, error) {
 	span := tracer.StartSpan("readRoleFromAWS", tracer.ChildOf(parentSpan.Context()))
 	defer span.Finish()
-	span.SetTag("aws.role", role)
+	span.SetTag("aws.role.original_name", role)
 
 	request.log.Infof("Looking for IAM role for %s", role)
 
 	roleObject := &iam.Role{}
 	if roleObject, ok := roleCache.Get(role); ok {
-		request.setLabel("read_role_from_aws_cache", "hit")
+		request.setLabel("aws.cache.role", "hit")
 		request.log.Infof("Found IAM role %s in cache", role)
 		return roleObject.(*iam.Role), nil
 	}
 
-	request.setLabel("read_role_from_aws_cache", "miss")
+	request.setLabel("aws.cache.role", "miss")
 
 	if strings.Contains(role, "@") { // IAM_ROLE=my-role@012345678910
 		request.log.Infof("Constructing IAM role info for %s manually", role)
@@ -88,6 +88,9 @@ func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*ia
 		roleObject = resp.Role
 	}
 
+	span.SetTag("aws.role.arn", roleObject.Arn)
+	span.SetTag("aws.role.name", roleObject.RoleName)
+
 	roleCache.Set(role, roleObject, cache.DefaultExpiration)
 	return roleObject, nil
 }
@@ -110,18 +113,18 @@ func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInpu
 func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRoleResponse, error) {
 	span := tracer.StartSpan("assumeRoleFromAWS", tracer.ChildOf(request.datadogSpan.Context()))
 	defer span.Finish()
+
 	span.SetTag("aws.arn", arn)
 	span.SetTag("aws.external_id", externalID)
 
 	request.log.Infof("Looking for STS Assume Role for %s", arn)
-
 	if assumedRole, ok := permissionCache.Get(arn); ok {
-		request.setLabel("assume_role_from_aws_cache", "hit")
+		request.setLabel("aws.cache.assume_role", "hit")
 		request.log.Infof("Found STS Assume Role %s in cache", arn)
 		return assumedRole.(*sts.AssumeRoleResponse), nil
 	}
 
-	request.setLabel("assume_role_from_aws_cache", "miss")
+	request.setLabel("aws.cache.assume_role", "miss")
 	request.log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
 	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalID))
 
