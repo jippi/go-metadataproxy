@@ -45,15 +45,13 @@ func NewRequest(r *http.Request, name, path string) *Request {
 	}
 
 	// Setup tracing first
-	if isDataDogEnabled {
-		if span, found := tracer.SpanFromContext(r.Context()); found {
-			request.datadogSpan = span
-
-			span.SetTag("request_id", request.id)
-			request.setLogLabel("dd.trace_id", fmt.Sprintf("%d", span.Context().TraceID()))
-			request.setLogLabel("dd.span_id", fmt.Sprintf("%d", span.Context().SpanID()))
-		}
+	span, found := tracer.SpanFromContext(r.Context())
+	request.datadogSpan = span
+	if found {
+		request.setLogLabel("dd.trace_id", fmt.Sprintf("%d", span.Context().TraceID()))
+		request.setLogLabel("dd.span_id", fmt.Sprintf("%d", span.Context().SpanID()))
 	}
+	request.datadogSpan.SetTag("request_id", request.id)
 
 	request.setLabel("handler_name", name)
 	request.setLabel("request_path", path)

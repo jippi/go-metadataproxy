@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
@@ -37,6 +38,10 @@ func ConfigureAWS() {
 }
 
 func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
+	span := tracer.StartSpan("readRoleFromAWS")
+	defer span.Finish()
+	span.SetTag("aws.role", role)
+
 	request.log.Infof("Looking for IAM role for %s", role)
 
 	roleObject := &iam.Role{}
@@ -101,6 +106,11 @@ func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInpu
 }
 
 func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRoleResponse, error) {
+	span := tracer.StartSpan("assumeRoleFromAWS")
+	defer span.Finish()
+	span.SetTag("aws.arn", arn)
+	span.SetTag("aws.external_id", externalID)
+
 	request.log.Infof("Looking for STS Assume Role for %s", arn)
 
 	if assumedRole, ok := permissionCache.Get(arn); ok {

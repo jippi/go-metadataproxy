@@ -7,6 +7,7 @@ import (
 
 	docker "github.com/fsouza/go-dockerclient"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 var (
@@ -37,8 +38,11 @@ func ConfigureDocker() {
 }
 
 func findDockerContainer(ip string, request *Request) (*docker.Container, error) {
-	var container *docker.Container
+	span := tracer.StartSpan("findDockerContainer")
+	defer span.Finish()
+	span.SetTag("docker.ip", ip)
 
+	var container *docker.Container
 	request.log.Infof("Looking up container info for %s in docker", ip)
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
@@ -75,6 +79,10 @@ func findDockerContainer(ip string, request *Request) (*docker.Container, error)
 }
 
 func findContainerByIP(ip string, request *Request, containers []docker.APIContainers) (*docker.Container, error) {
+	span := tracer.StartSpan("findContainerByIP")
+	defer span.Finish()
+	span.SetTag("docker.ip", ip)
+
 	for _, container := range containers {
 		for name, network := range container.Networks.Networks {
 			if network.IPAddress == ip {
@@ -132,5 +140,6 @@ func getenvDefault(key, defaultValue string) string {
 	if value == "" {
 		return defaultValue
 	}
+
 	return value
 }
