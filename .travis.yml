@@ -8,6 +8,10 @@ go:
 services:
   - docker
 
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
 env:
   global:
     - GOBUILD="linux-amd64 windows-amd64 darwin-amd64"
