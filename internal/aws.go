@@ -38,7 +38,7 @@ func ConfigureAWS() {
 }
 
 func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
-	span := tracer.StartSpan("readRoleFromAWS")
+	span := tracer.StartSpan("readRoleFromAWS", tracer.ChildOf(request.datadogSpan.Context()))
 	defer span.Finish()
 	span.SetTag("aws.role", role)
 
@@ -106,7 +106,7 @@ func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInpu
 }
 
 func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRoleResponse, error) {
-	span := tracer.StartSpan("assumeRoleFromAWS")
+	span := tracer.StartSpan("assumeRoleFromAWS", tracer.ChildOf(request.datadogSpan.Context()))
 	defer span.Finish()
 	span.SetTag("aws.arn", arn)
 	span.SetTag("aws.external_id", externalID)

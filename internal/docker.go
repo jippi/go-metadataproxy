@@ -38,7 +38,7 @@ func ConfigureDocker() {
 }
 
 func findDockerContainer(ip string, request *Request) (*docker.Container, error) {
-	span := tracer.StartSpan("findDockerContainer")
+	span := tracer.StartSpan("findDockerContainer", tracer.ChildOf(request.datadogSpan.Context()))
 	defer span.Finish()
 	span.SetTag("docker.ip", ip)
 
@@ -79,7 +79,7 @@ func findDockerContainer(ip string, request *Request) (*docker.Container, error)
 }
 
 func findContainerByIP(ip string, request *Request, containers []docker.APIContainers) (*docker.Container, error) {
-	span := tracer.StartSpan("findContainerByIP")
+	span := tracer.StartSpan("findContainerByIP", tracer.ChildOf(request.datadogSpan.Context()))
 	defer span.Finish()
 	span.SetTag("docker.ip", ip)
 
