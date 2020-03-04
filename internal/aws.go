@@ -9,8 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	awstrace "github.com/jippi/go-metadataproxy/internal/trace/aws"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
@@ -18,8 +20,8 @@ const (
 )
 
 var (
-	iamService      *iam.IAM
-	stsService      *sts.STS
+	iamService      *iam.Client
+	stsService      *sts.Client
 	roleCache       = cache.New(1*time.Hour, 15*time.Minute)
 	permissionCache = cache.New(5*time.Minute, 10*time.Minute)
 )
@@ -31,22 +33,27 @@ func ConfigureAWS() {
 	if err != nil {
 		log.Fatalf("Unable to load AWS SDK config, " + err.Error())
 	}
+	cfg = awstrace.WrapSession(cfg)
 
 	iamService = iam.New(cfg)
 	stsService = sts.New(cfg)
 }
 
-func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
+func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*iam.Role, error) {
+	span := tracer.StartSpan("readRoleFromAWS", tracer.ChildOf(parentSpan.Context()))
+	defer span.Finish()
+	span.SetTag("aws.role.original_name", role)
+
 	request.log.Infof("Looking for IAM role for %s", role)
 
 	roleObject := &iam.Role{}
 	if roleObject, ok := roleCache.Get(role); ok {
-		request.setLabel("read_role_from_aws_cache", "hit")
+		request.setLabel("aws.cache.role", "hit")
 		request.log.Infof("Found IAM role %s in cache", role)
 		return roleObject.(*iam.Role), nil
 	}
 
-	request.setLabel("read_role_from_aws_cache", "miss")
+	request.setLabel("aws.cache.role", "miss")
 
 	if strings.Contains(role, "@") { // IAM_ROLE=my-role@012345678910
 		request.log.Infof("Constructing IAM role info for %s manually", role)
@@ -72,21 +79,24 @@ func readRoleFromAWS(role string, request *Request) (*iam.Role, error) {
 		req := iamService.GetRoleRequest(&iam.GetRoleInput{
 			RoleName: aws.String(role),
 		})
-
-		resp, err := req.Send()
+		resp, err := req.Send(tracer.ContextWithSpan(req.Context(), span))
 		if err != nil {
+			span.Finish(tracer.WithError(err))
 			return nil, err
 		}
 
 		roleObject = resp.Role
 	}
 
+	span.SetTag("aws.role.arn", roleObject.Arn)
+	span.SetTag("aws.role.name", roleObject.RoleName)
+
 	roleCache.Set(role, roleObject, cache.DefaultExpiration)
 	return roleObject, nil
 }
 
-func constructAssumeRoleInput(arn string, externalId string) (*sts.AssumeRoleInput) {
-	if externalId == "" {
+func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInput {
+	if externalID == "" {
 		return &sts.AssumeRoleInput{
 			RoleArn:         aws.String(arn),
 			RoleSessionName: aws.String("go-metadataproxy"),
@@ -94,27 +104,33 @@ func constructAssumeRoleInput(arn string, externalId string) (*sts.AssumeRoleInp
 	}
 
 	return &sts.AssumeRoleInput{
-		ExternalId:      aws.String(externalId),
+		ExternalId:      aws.String(externalID),
 		RoleArn:         aws.String(arn),
 		RoleSessionName: aws.String("go-metadataproxy"),
 	}
 }
 
-func assumeRoleFromAWS(arn string, externalId string, request *Request) (*sts.AssumeRoleOutput, error) {
-	request.log.Infof("Looking for STS Assume Role for %s", arn)
+func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRoleResponse, error) {
+	span := tracer.StartSpan("assumeRoleFromAWS", tracer.ChildOf(request.datadogSpan.Context()))
+	defer span.Finish()
 
+	span.SetTag("aws.arn", arn)
+	span.SetTag("aws.external_id", externalID)
+
+	request.log.Infof("Looking for STS Assume Role for %s", arn)
 	if assumedRole, ok := permissionCache.Get(arn); ok {
-		request.setLabel("assume_role_from_aws_cache", "hit")
+		request.setLabel("aws.cache.assume_role", "hit")
 		request.log.Infof("Found STS Assume Role %s in cache", arn)
-		return assumedRole.(*sts.AssumeRoleOutput), nil
+		return assumedRole.(*sts.AssumeRoleResponse), nil
 	}
 
-	request.setLabel("assume_role_from_aws_cache", "miss")
+	request.setLabel("aws.cache.assume_role", "miss")
 	request.log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
-	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalId))
+	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalID))
 
-	assumedRole, err := req.Send()
+	assumedRole, err := req.Send(tracer.ContextWithSpan(req.Context(), span))
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, err
 	}
 

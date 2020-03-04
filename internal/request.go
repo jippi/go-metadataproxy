@@ -1,46 +1,104 @@
 package internal
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	metrics "github.com/armon/go-metrics"
-	"github.com/satori/go.uuid"
+	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
 	telemetryPrefix = "metadataproxy"
 )
 
+var (
+	isDataDogEnabled = os.Getenv("DATADOG_SERVICE_NAME") != ""
+)
+
 type Request struct {
+	request       *http.Request
+	vars          map[string]string
 	id            string
 	log           *logrus.Entry
 	metricsLabels []metrics.Label
 	loggingLabels logrus.Fields
+	datadogSpan   tracer.Span
 }
 
-func NewRequest() *Request {
+func NewRequest(r *http.Request, name, path string) *Request {
 	id := uuid.NewV4()
 
-	return &Request{
+	// Create struct
+	request := &Request{
+		request:       r,
+		vars:          mux.Vars(r),
 		id:            id.String(),
-		log:           logrus.WithField("request_id", id.String()),
+		log:           logrus.WithField("request.id", id.String()),
 		metricsLabels: make([]metrics.Label, 0),
 		loggingLabels: logrus.Fields{},
 	}
+
+	// Setup tracing first
+	span, found := tracer.SpanFromContext(r.Context())
+	request.datadogSpan = span
+	if found {
+		request.setLogLabel("dd.trace_id", fmt.Sprintf("%d", span.Context().TraceID()))
+		request.setLogLabel("dd.span_id", fmt.Sprintf("%d", span.Context().SpanID()))
+	}
+	request.datadogSpan.SetTag("request.id", request.id)
+
+	request.setLabel("http.handler", name)
+	request.setLabel("request.path", path)
+	request.setLogLabel("remote_addr", remoteIP(r.RemoteAddr))
+
+	request.setLabelsFromRequest()
+
+	return request
 }
 
+// Set a log label (only)
+func (r *Request) setLogLabel(key, value string) {
+	r.log = r.log.WithField(key, value)
+	r.setTraceTag(key, value)
+}
+
+// Set a metric label (only)
+func (r *Request) setMetricsLabel(key, value string) {
+	r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: value})
+	r.setTraceTag(key, value)
+}
+
+// Set both a log label and metric label
 func (r *Request) setLabel(key, value string) {
-	r.setLabels(map[string]string{key: value})
+	r.setLogLabel(key, value)
+	r.setMetricsLabel(key, value)
 }
 
+// Set both a log and metric label for each item
 func (r *Request) setLabels(pairs map[string]string) {
 	for key, value := range pairs {
-		r.metricsLabels = append(r.metricsLabels, metrics.Label{Name: key, Value: value})
-		r.loggingLabels[key] = value
+		r.setLabel(key, value)
+	}
+}
+
+// Set Trace tag details
+func (r *Request) setTraceTag(key, value string) {
+	if !isDataDogEnabled {
+		return
 	}
 
-	r.log = r.log.WithFields(r.loggingLabels)
+	// Don't add datadog own data to traces
+	if strings.HasPrefix(key, "dd.") {
+		return
+	}
+
+	r.datadogSpan.SetTag(key, value)
 }
 
 func (r *Request) incrCounterWithLabels(path []string, val float32) {
@@ -58,15 +116,29 @@ func (r *Request) setResponseHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Request-ID", r.id)
 }
 
-func (r *Request) setLabelsFromRequestHeader(httpRequest *http.Request) {
-	if len(copyRequestHeaders) == 0 {
-		return
+func (r *Request) setLabelsFromRequest() {
+	if version, ok := r.vars["api_version"]; ok {
+		r.setLabel("aws.api_version", version)
 	}
 
-	labels := make(map[string]string)
-	for _, label := range copyRequestHeaders {
-		if v := httpRequest.Header.Get("label"); v != "" {
-			labels[labelName("header", label)] = v
+	if len(copyRequestHeaders) >= 0 {
+		for _, label := range copyRequestHeaders {
+			if v := r.request.Header.Get("label"); v != "" {
+				r.setLabel(labelName("header", label), v)
+			}
 		}
 	}
+}
+
+func (r *Request) HandleError(err error, code int, description string, w http.ResponseWriter) {
+	r.datadogSpan.Finish(tracer.WithError(err))
+
+	r.setLabels(map[string]string{
+		"response.code":     fmt.Sprintf("%d", code),
+		"error.code":        description,
+		"error.description": err.Error(),
+	})
+
+	r.log.Error(err)
+	http.NotFound(w, nil)
 }

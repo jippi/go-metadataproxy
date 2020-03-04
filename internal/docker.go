@@ -5,8 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 var (
@@ -15,6 +16,7 @@ var (
 	copyDockerLabels   = strings.Split(os.Getenv("COPY_DOCKER_LABELS"), ",")
 	copyDockerEnvs     = strings.Split(os.Getenv("COPY_DOCKER_ENV"), ",")
 	copyRequestHeaders = strings.Split(os.Getenv("COPY_REQUEST_HEADERS"), ",")
+	labelSeparator     = getenvDefault("LABEL_SEPARATOR", "_")
 )
 
 // ConfigureDocker will setup a docker client used during normal operations
@@ -35,17 +37,22 @@ func ConfigureDocker() {
 	dockerClient = client
 }
 
-func findDockerContainer(ip string, request *Request) (*docker.Container, error) {
-	var container *docker.Container
+func findDockerContainer(ip string, request *Request, parentSpan tracer.Span) (*docker.Container, error) {
+	span := tracer.StartSpan("findDockerContainer", tracer.ChildOf(parentSpan.Context()), tracer.ServiceName("docker"), tracer.ResourceName("list-containers"))
+	defer span.Finish()
+	span.SetTag("docker.ip", ip)
 
+	var container *docker.Container
 	request.log.Infof("Looking up container info for %s in docker", ip)
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, err
 	}
 
-	container, err = findContainerByIP(ip, request, containers)
+	container, err = findContainerByIP(ip, request, containers, span)
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, err
 	}
 
@@ -73,7 +80,11 @@ func findDockerContainer(ip string, request *Request) (*docker.Container, error)
 	return container, nil
 }
 
-func findContainerByIP(ip string, request *Request, containers []docker.APIContainers) (*docker.Container, error) {
+func findContainerByIP(ip string, request *Request, containers []docker.APIContainers, parentSpan tracer.Span) (*docker.Container, error) {
+	span := tracer.StartSpan("findContainerByIP", tracer.ChildOf(parentSpan.Context()), tracer.ServiceName("docker"), tracer.ResourceName("inspect-container"))
+	defer span.Finish()
+	span.SetTag("docker.ip", ip)
+
 	for _, container := range containers {
 		for name, network := range container.Networks.Networks {
 			if network.IPAddress == ip {
@@ -81,6 +92,7 @@ func findContainerByIP(ip string, request *Request, containers []docker.APIConta
 
 				inspectedContainer, err := dockerClient.InspectContainer(container.ID)
 				if err != nil {
+					span.Finish(tracer.WithError(err))
 					return nil, err
 				}
 
@@ -89,7 +101,9 @@ func findContainerByIP(ip string, request *Request, containers []docker.APIConta
 		}
 	}
 
-	return nil, fmt.Errorf("Could not find any container with IP %s", ip)
+	err := fmt.Errorf("Could not find any container with IP %s", ip)
+	span.Finish(tracer.WithError(err))
+	return nil, err
 }
 
 func findDockerContainerIAMRole(container *docker.Container, request *Request) (string, error) {
@@ -105,7 +119,7 @@ func findDockerContainerIAMRole(container *docker.Container, request *Request) (
 	return "", fmt.Errorf("Could not find IAM_ROLE in the container ENV config")
 }
 
-func findDockerContainerExternalId(container *docker.Container, request *Request) string {
+func findDockerContainerexternalID(container *docker.Container, request *Request) string {
 	v, _ := findDockerContainerEnvValue(container, "IAM_EXTERNAL_ID")
 	return v
 }
@@ -123,5 +137,14 @@ func findDockerContainerEnvValue(container *docker.Container, key string) (strin
 }
 
 func labelName(prefix, label string) string {
-	return fmt.Sprintf("%s_%s", prefix, strings.ToLower(label))
+	return fmt.Sprintf("%s%s%s", prefix, labelSeparator, strings.ToLower(label))
+}
+
+func getenvDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	return value
 }

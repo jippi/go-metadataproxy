@@ -11,6 +11,8 @@ import (
 	"github.com/cenkalti/backoff"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
+	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 func remoteIP(addr string) string {
@@ -18,6 +20,9 @@ func remoteIP(addr string) string {
 }
 
 func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, string, error) {
+	span := tracer.StartSpan("findContainerRoleByAddress", tracer.ChildOf(request.datadogSpan.Context()))
+	defer span.Finish()
+
 	var container *docker.Container
 
 	// retry finding the Docker container since sometimes Docker doesn't actually list the container until its been
@@ -30,7 +35,7 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, strin
 
 	retryable := func() error {
 		var err error
-		container, err = findDockerContainer(remoteIP, request)
+		container, err = findDockerContainer(remoteIP, request, span)
 		return err
 	}
 
@@ -45,27 +50,24 @@ func findContainerRoleByAddress(addr string, request *Request) (*iam.Role, strin
 
 	roleName, err := findDockerContainerIAMRole(container, request)
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, "", err
 	}
 
-	role, err := readRoleFromAWS(roleName, request)
+	role, err := readRoleFromAWS(roleName, request, span)
 	if err != nil {
+		span.Finish(tracer.WithError(err))
 		return nil, "", err
 	}
 
-	externalId := findDockerContainerExternalId(container, request)
+	externalID := findDockerContainerexternalID(container, request)
 
-	return role, externalId, nil
+	return role, externalID, nil
 }
 
 func isCompatibleAPIVersion(r *http.Request) bool {
 	vars := mux.Vars(r)
 	return vars["api_version"] >= "2012-01-12"
-}
-
-func httpError(err error, w http.ResponseWriter, r *http.Request, request *Request) {
-	request.log.Error(err)
-	http.NotFound(w, r)
 }
 
 func sendJSONResponse(w http.ResponseWriter, response interface{}) {
@@ -100,6 +102,7 @@ func newTransport() *customTransport {
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
+	httptrace.WrapRoundTripper(tr)
 	return tr
 }
 
