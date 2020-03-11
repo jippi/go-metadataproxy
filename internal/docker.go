@@ -73,6 +73,9 @@ func findDockerContainer(ip string, request *Request, parentSpan tracer.Span) (*
 		}
 	}
 
+	request.setLogLabel(labelName("container", "id"), container.ID)
+	request.setTraceTag(labelName("container", "id"), container.ID)
+
 	if len(additionalLabels) > 0 {
 		request.setLabels(additionalLabels)
 	}
