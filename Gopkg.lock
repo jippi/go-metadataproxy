@@ -49,7 +49,7 @@
   revision = "13f9d8e9b41c66738153b7582f1f62add8e407c8"
 
 [[projects]]
-  digest = "1:d7f7bd0c29a429f032c7e2baafb956acae698a83898018ec11efee3ed72c1504"
+  digest = "1:604a6be5d15981184d87e3465a845709036c3b9396d309c1f8472f2a3ef3f834"
   name = "github.com/aws/aws-sdk-go-v2"
   packages = [
     "aws",
@@ -60,11 +60,20 @@
     "aws/endpointcreds",
     "aws/endpoints",
     "aws/external",
+    "aws/middleware",
+    "aws/processcreds",
+    "aws/ratelimit",
+    "aws/retry",
+    "aws/signer/internal/v4",
     "aws/signer/v4",
     "aws/stscreds",
     "internal/awsutil",
     "internal/ini",
+    "internal/rand",
     "internal/sdk",
+    "internal/sdkio",
+    "internal/sync/singleflight",
+    "internal/timeconv",
     "private/protocol",
     "private/protocol/query",
     "private/protocol/query/queryutil",
@@ -72,10 +81,22 @@
     "private/protocol/xml/xmlutil",
     "service/iam",
     "service/sts",
+    "service/sts/stsiface",
   ]
   pruneopts = "UT"
-  revision = "0143dbcf72cf30047f4830d714f7511e74d44034"
-  version = "v0.6.0"
+  revision = "b8a3f09b45d25fbc0ccfb02dc8f4bd80c9eb5374"
+  version = "v0.21.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:16993967c7c3e8d2956cdc88148926382c05b17e00bae98b8116cc18503a295c"
+  name = "github.com/awslabs/smithy-go"
+  packages = [
+    "middleware",
+    "transport/http",
+  ]
+  pruneopts = "UT"
+  revision = "86ef03cc15e025c7df399c5716f5e3d62b88a598"
 
 [[projects]]
   branch = "master"
@@ -207,11 +228,11 @@
   version = "v0.5.0"
 
 [[projects]]
-  digest = "1:e22af8c7518e1eab6f2eab2b7d7558927f816262586cd6ed9f349c97a6c285c4"
+  digest = "1:bb81097a5b62634f3e9fec1014657855610c82d19b9a40c17612e32651e35dca"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   pruneopts = "UT"
-  revision = "0b12d6b5"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
