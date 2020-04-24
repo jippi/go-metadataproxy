@@ -159,12 +159,12 @@
   version = "v0.3.3"
 
 [[projects]]
-  digest = "1:625e33959bbb2cf22d8f0dd8561c42315de8811d3dc3ef3fb7feabdd79e6c37b"
+  digest = "1:431240b4ef377dd203b0668accceb9532cdfd213d898e5710a7b5d880d08fc6f"
   name = "github.com/fsouza/go-dockerclient"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b047305728a119e0df88f2d5e74c1e4530184990"
-  version = "v1.6.0"
+  revision = "9abb9ed850fd14325e1f2c7d4fa47960baf980eb"
+  version = "v1.6.5"
 
 [[projects]]
   digest = "1:bbadccf3d3317ea03c0dac0b45b673b4b397c8f91a1d2eff550a3c51c4ad770e"

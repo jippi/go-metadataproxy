@@ -40,7 +40,7 @@ required = ["github.com/davecgh/go-spew/spew"]
 
 [[constraint]]
   name = "github.com/fsouza/go-dockerclient"
-  version = "1.6.0"
+  version = "1.6.5"
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go-v2"
