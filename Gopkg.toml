@@ -44,7 +44,7 @@ required = ["github.com/davecgh/go-spew/spew"]
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go-v2"
-  version = "v0.6.0"
+  version = "v0.22.0"
 
 [[override]]
   name = "github.com/davecgh/go-spew"
