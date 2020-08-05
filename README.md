@@ -223,6 +223,34 @@ LOCAL_IPV4=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
   --jump DROP
 ```
 
+If you run Docker containers within their own bridge network, the network interface will be in format `br-<network-id>` rather than `docker0`.
+
+For example, if a Docker network is created:
+
+```bash
+docker network create some-network
+d180d436e9c4c4322156140ba04233a530a30966ddbcd7f9be4331724d78f459
+```
+
+You may have network interface `br-d180d436e9c4`.
+
+You can setup `iptables` to forward traffic from any such bridge network with a wildcard `+`:
+
+```bash
+LOCAL_IPV4=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+
+/sbin/iptables \
+  --append PREROUTING \
+  --destination 169.254.169.254 \
+  --protocol tcp \
+  --dport 80 \
+  --in-interface br-+ \
+  --jump DNAT \
+  --table nat \
+  --to-destination $LOCAL_IPV4:8000 \
+  --wait
+```
+
 ## Run go-metadataproxy without docker
 
 In the following we assume \_my\_config\_ is a bash file with exports for all of
