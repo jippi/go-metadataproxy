@@ -38,7 +38,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2a0e571449db9772051a86c5614c9425fa6e4f9c545369ebad72d43e8a2b9330"
+  digest = "1:3ba1a4253f17bef769019b2fca764c20c222f72977c16209e45e810b6e05a46e"
   name = "github.com/armon/go-metrics"
   packages = [
     ".",
@@ -46,7 +46,7 @@
     "prometheus",
   ]
   pruneopts = "UT"
-  revision = "13f9d8e9b41c66738153b7582f1f62add8e407c8"
+  revision = "2bc64ebd2914430b52dfc5c90c00722afec193ba"
 
 [[projects]]
   digest = "1:d7f7bd0c29a429f032c7e2baafb956acae698a83898018ec11efee3ed72c1504"
