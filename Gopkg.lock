@@ -86,12 +86,12 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:44f56f927970ceccb0a28eccbea0cde48e56f04619ddbb70198036407f14cd0e"
+  digest = "1:4aa08a353c0ed3a115473dca7b60067f6430c5a1f189b420336545b1fbc542fa"
   name = "github.com/cenkalti/backoff"
   packages = ["."]
   pruneopts = "UT"
-  revision = "1ff1c09ea627d2be64cea605afa999c582c7cd01"
-  version = "v3.1.1"
+  revision = "c2975ffa541a1caeca5f76c396cb8c3e7b3bb5f8"
+  version = "v4.1.0"
 
 [[projects]]
   branch = "master"
