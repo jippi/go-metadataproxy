@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -95,7 +96,7 @@ func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*ia
 	return roleObject, nil
 }
 
-func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInput {
+func constructAssumeRoleInput(arn string, externalID string, roleDurationSeconds int64) *sts.AssumeRoleInput {
 	if externalID == "" {
 		return &sts.AssumeRoleInput{
 			RoleArn:         aws.String(arn),
@@ -104,6 +105,7 @@ func constructAssumeRoleInput(arn string, externalID string) *sts.AssumeRoleInpu
 	}
 
 	return &sts.AssumeRoleInput{
+		DurationSeconds: aws.Int64(roleDurationSeconds),
 		ExternalId:      aws.String(externalID),
 		RoleArn:         aws.String(arn),
 		RoleSessionName: aws.String("go-metadataproxy"),
@@ -117,6 +119,9 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 	span.SetTag("aws.arn", arn)
 	span.SetTag("aws.external_id", externalID)
 
+	roleDurationSeconds := getenvDefault("ROLE_DURATION_SECONDS", "3600")
+	intRoleDurationSeconds, _ := strconv.ParseInt(roleDurationSeconds, 10, 64)
+
 	request.log.Infof("Looking for STS Assume Role for %s", arn)
 	if assumedRole, ok := permissionCache.Get(arn); ok {
 		request.setLabel("aws.cache.assume_role", "hit")
@@ -126,7 +131,7 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 
 	request.setLabel("aws.cache.assume_role", "miss")
 	request.log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
-	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalID))
+	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalID, intRoleDurationSeconds))
 
 	assumedRole, err := req.Send(tracer.ContextWithSpan(req.Context(), span))
 	if err != nil {
