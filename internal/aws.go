@@ -99,6 +99,7 @@ func readRoleFromAWS(role string, request *Request, parentSpan tracer.Span) (*ia
 func constructAssumeRoleInput(arn string, externalID string, roleDurationSeconds int64) *sts.AssumeRoleInput {
 	if externalID == "" {
 		return &sts.AssumeRoleInput{
+			DurationSeconds: aws.Int64(roleDurationSeconds),
 			RoleArn:         aws.String(arn),
 			RoleSessionName: aws.String("go-metadataproxy"),
 		}
@@ -130,10 +131,15 @@ func assumeRoleFromAWS(arn, externalID string, request *Request) (*sts.AssumeRol
 	}
 
 	request.setLabel("aws.cache.assume_role", "miss")
-	request.log.Infof("Requesting STS Assume Role info for %s from AWS", arn)
+	request.log.Infof("Requesting STS Assume Role info for %s from AWS with expiration of %s seconds", arn, roleDurationSeconds)
 	req := stsService.AssumeRoleRequest(constructAssumeRoleInput(arn, externalID, intRoleDurationSeconds))
 
+	credentialRequestTime := time.Now()
+	request.log.Infof("Credential Request time: %s", credentialRequestTime.String())
+
 	assumedRole, err := req.Send(tracer.ContextWithSpan(req.Context(), span))
+	expirationTime := assumedRole.AssumeRoleOutput.Credentials.Expiration
+	request.log.Infof("Credential Expiration time: %s", expirationTime.String())
 	if err != nil {
 		span.Finish(tracer.WithError(err))
 		return nil, err
