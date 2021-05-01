@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Microsoft/hcsshim v0.8.7-0.20191101173118-65519b62243c // indirect
-	github.com/armon/go-metrics v0.3.2
+	github.com/armon/go-metrics v0.3.8
 	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/containerd/containerd v1.3.0 // indirect
