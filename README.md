@@ -7,7 +7,7 @@ The go-metadataproxy is used to allow containers to acquire IAM roles. By metada
 From inside of the repo run the following commands:
 
 ```bash
-dep ensure
+go get ./...
 go install
 ```
 
