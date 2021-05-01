@@ -1,6 +1,6 @@
 module github.com/jippi/go-metadataproxy
 
-go 1.14
+go 1.16
 
 require (
 	github.com/Microsoft/hcsshim v0.8.7-0.20191101173118-65519b62243c // indirect
