@@ -14,16 +14,12 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/newrelic/go-agent/v3 v3.0.0
 	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
-	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.4.1
+	github.com/prometheus/client_golang v1.10.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/seatgeek/logrus-gelf-formatter v0.0.0-20180829220724-ce23ecb3f367
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/tinylib/msgp v1.1.1 // indirect
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975 // indirect
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	google.golang.org/grpc v1.22.0 // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0
 )
