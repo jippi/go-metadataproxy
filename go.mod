@@ -9,7 +9,7 @@ require (
 	github.com/fsouza/go-dockerclient v1.7.2
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/newrelic/go-agent/v3 v3.0.0
+	github.com/newrelic/go-agent/v3 v3.12.0
 	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
