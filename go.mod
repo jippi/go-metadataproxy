@@ -9,7 +9,7 @@ require (
 	github.com/fsouza/go-dockerclient v1.7.4
 	github.com/gorilla/mux v1.8.0
 	github.com/newrelic/go-agent/v3 v3.15.1
-	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
+	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.1
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.7.1
