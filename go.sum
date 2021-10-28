@@ -480,8 +480,8 @@ github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/
 github.com/newrelic/go-agent/v3 v3.0.0/go.mod h1:H28zDNUC0U/b7kLoY4EFOhuth10Xu/9dchozUiOseQQ=
 github.com/newrelic/go-agent/v3 v3.15.1 h1:0N1K7fTjRty69VHUHvz7fA3bApLUs2MjzsYM4GWHYL4=
 github.com/newrelic/go-agent/v3 v3.15.1/go.mod h1:1A1dssWBwzB7UemzRU6ZVaGDsI+cEn5/bNxI0wiYlIc=
-github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0 h1:3RDWj/QcU5CBP0lJnkh4CwK7tIxsSH53C+GPo5OGFCE=
-github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0/go.mod h1:1XnCVdRSKjS5ikMycFh7VKXBkk0oYPaKQb+sd6aSCoA=
+github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.1 h1:9SyybWTkOSffuwCAp8oUcMZghFkGLWZUkPC/38AvjxU=
+github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.1/go.mod h1:1XnCVdRSKjS5ikMycFh7VKXBkk0oYPaKQb+sd6aSCoA=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
