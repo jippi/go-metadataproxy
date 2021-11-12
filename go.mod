@@ -18,5 +18,5 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tinylib/msgp v1.1.5 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
-	gopkg.in/DataDog/dd-trace-go.v1 v1.32.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.34.0
 )
