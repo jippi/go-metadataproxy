@@ -6,7 +6,8 @@ require (
 	github.com/armon/go-metrics v0.3.8
 	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/fsouza/go-dockerclient v1.7.4
+	github.com/docker/docker v20.10.8+incompatible // indirect
+	github.com/fsouza/go-dockerclient v1.7.8
 	github.com/gorilla/mux v1.8.0
 	github.com/newrelic/go-agent/v3 v3.15.1
 	github.com/newrelic/go-agent/v3/integrations/nrgorilla v1.1.0
