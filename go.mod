@@ -3,7 +3,7 @@ module github.com/jippi/go-metadataproxy
 go 1.16
 
 require (
-	github.com/armon/go-metrics v0.3.8
+	github.com/armon/go-metrics v0.4.1
 	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/fsouza/go-dockerclient v1.7.4
